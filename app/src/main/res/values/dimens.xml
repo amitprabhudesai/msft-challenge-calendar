@@ -3,4 +3,7 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+
+    <dimen name="agenda_view_row_height">64dp</dimen>
+    <dimen name="agenda_view_column_divider_height">62dp</dimen>
 </resources>

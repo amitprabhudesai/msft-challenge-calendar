@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="64dp"
+    android:layout_height="@dimen/agenda_view_row_height"
     android:baselineAligned="false">
 
     <!-- event begin and end times -->
@@ -35,6 +35,12 @@
             android:textSize="16sp"
             android:textStyle="normal" />
     </RelativeLayout>
+
+    <View style="@style/Divider"
+        android:layout_marginTop="2dp"
+        android:layout_height="@dimen/agenda_view_column_divider_height"
+        android:layout_marginLeft="4dp"
+        android:layout_marginStart="4dp"/>
 
     <!-- event description -->
     <RelativeLayout
