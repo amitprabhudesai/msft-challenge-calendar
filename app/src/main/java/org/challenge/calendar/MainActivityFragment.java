@@ -25,8 +25,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 
 public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -34,7 +36,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
     private RecyclerView mRecyclerView;
-    private List<CalendarEvent> mEvents;
+    private AgendaViewAdapter mAdapter;
 
     private static final String[] INSTANCES_PROJECTION = new String[] {
             Instances.EVENT_ID,        // 0
@@ -91,13 +93,11 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mEvents = new ArrayList<>();
         getLoaderManager().initLoader(0, null, this);
-
-        AgendaViewAdapter agendaViewAdapter = new AgendaViewAdapter();
-        mRecyclerView.setAdapter(agendaViewAdapter);
-        agendaViewAdapter.shouldShowFooters(false);
-        agendaViewAdapter.notifyDataSetChanged();
+        mAdapter = new AgendaViewAdapter();
+        mRecyclerView.setAdapter(mAdapter);
+        mAdapter.shouldShowFooters(false);
+        mAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -119,8 +119,9 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             return;
         }
 
+        Map<String, List<CalendarEvent>> result = new HashMap<>();
         final Calendar cal = Calendar.getInstance();
-        final DateFormat formatter = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a", Locale.US);
+        final DateFormat formatter = new SimpleDateFormat("EEE, d MMM; HH:mm", Locale.US);
         String begin, end;
         try {
             while (data.moveToNext()) {
@@ -129,47 +130,42 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                 String title = data.getString(PROJECTION_TITLE_INDEX);
                 String location = data.getString(PROJECTION_EVENT_LOCATION_INDEX);
                 int allDay = data.getInt(PROJECTION_ALL_DAY_INDEX);
-                begin = "";
-                end = "";
+                long beginVal = data.getLong(PROJECTION_BEGIN_INDEX);
+                cal.setTimeInMillis(beginVal);
+                begin = formatter.format(cal.getTime());
+                String[] split = begin.split(";");
+                String beginDay = split[0];
+                String beginTime = split[1];
+
+                CalendarEvent event = new CalendarEvent(id, calId, title, beginTime, location, allDay);
                 if (0 == allDay) {
-                    long beginVal = data.getLong(PROJECTION_BEGIN_INDEX);
-                    cal.setTimeInMillis(beginVal);
-                    begin = formatter.format(cal.getTime());
                     long endVal = data.getLong(PROJECTION_END_INDEX);
                     cal.setTimeInMillis(endVal);
                     end = formatter.format(cal.getTime());
+                    split = end.split(";");
+                    String endTime = split[1];
+
+                    event.setEndTime(endTime);
                 }
 
-                CalendarEvent event = new CalendarEvent(id, calId, title, location, allDay);
-                if (!event.isAllDay()) {
-                    event.setBeginTime(begin);
-                    event.setEndTime(end);
+                if (!result.containsKey(beginDay)) {
+                    List<CalendarEvent> events = new ArrayList<>();
+                    events.add(event);
+                    result.put(beginDay, events);
+                } else {
+                    result.get(beginDay).add(event);
                 }
-
-                mEvents.add(event);
             }
         } catch (Exception e) {
             Log.w(TAG, e.getMessage());
         }
 
-        //TODO(amit.prabhudesai) Set the data source for the adapter
-        printEvents();
+        mAdapter.setDataSource(result);
+        mAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
 
     }
-
-    private void printEvents() {
-        if (null == mEvents || 0 == mEvents.size()) {
-            Log.w(TAG, "No events found");
-            return;
-        }
-
-        for (final CalendarEvent evt : mEvents) {
-            Log.d(TAG, evt.toString());
-        }
-    }
-
 }

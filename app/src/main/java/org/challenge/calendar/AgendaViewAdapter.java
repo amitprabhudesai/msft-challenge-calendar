@@ -8,31 +8,50 @@ import android.widget.TextView;
 import com.afollestad.sectionedrecyclerview.SectionedRecyclerViewAdapter;
 import com.afollestad.sectionedrecyclerview.SectionedViewHolder;
 
-import java.util.Locale;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAdapter.AgendaItemViewHolder> {
 
+    private final Map<String, List<CalendarEvent>> mEvents;
+    private final Map<Integer, String> mSectionHeaders;
+
+    public AgendaViewAdapter() {
+        mSectionHeaders = new HashMap<>();
+        mEvents = new HashMap<>();
+    }
+
+    public void setDataSource(Map<String, List<CalendarEvent>> events) {
+        mEvents.putAll(events);
+        int i = 0;
+        for (final String key : mEvents.keySet()) {
+            mSectionHeaders.put(i++, key);
+        }
+    }
+
     @Override
     public int getSectionCount() {
-        return 30;
+        return mEvents.size();
     }
 
     @Override
     public int getItemCount(int sectionIndex) {
-        return 3;
+        return mEvents.get(mSectionHeaders.get(sectionIndex)).size();
     }
 
     @Override
     public void onBindHeaderViewHolder(AgendaItemViewHolder holder, int section, boolean expanded) {
-        holder.header.setText(String.format(Locale.US, "July %d", section+1));
+        holder.header.setText(mSectionHeaders.get(section));
     }
 
     @Override
     public void onBindViewHolder(AgendaItemViewHolder holder, int section, int relativePosition, int absolutePosition) {
-        holder.beginTime.setText("09:00");
-        holder.endTime.setText("10:00");
-        holder.title.setText("Video 2.0 + WebView");
-        holder.location.setText("IN-BLR-7F-Ruzzle(4)");
+        CalendarEvent event = mEvents.get(mSectionHeaders.get(section)).get(relativePosition);
+        holder.beginTime.setText(event.getBeginTime());
+        holder.endTime.setText(event.getEndTime());
+        holder.title.setText(event.getTitle());
+        holder.location.setText(event.getLocation());
     }
 
     @Override

@@ -14,18 +14,20 @@ public class CalendarEvent {
     private final String title;
     private final String location;
     private final boolean allDay;
+    private final String beginTime;
 
-    private String beginTime;
     private String endTime;
 
     public CalendarEvent(final long id,
                          final long calId,
                          final String title,
+                         final String beginTime,
                          final String location,
                          final int allDay) {
         this.id = id;
         this.calId = calId;
         this.title = title;
+        this.beginTime = beginTime;
         this.location = location;
         this.allDay = 1 == allDay;
     }
@@ -48,10 +50,6 @@ public class CalendarEvent {
 
     public final String getBeginTime() {
         return beginTime;
-    }
-
-    public final void setBeginTime(final String begin) {
-        this.beginTime = begin;
     }
 
     public final String getEndTime() {
