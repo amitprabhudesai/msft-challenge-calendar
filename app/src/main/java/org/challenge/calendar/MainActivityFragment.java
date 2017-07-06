@@ -2,9 +2,12 @@ package org.challenge.calendar;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +16,9 @@ import com.squareup.timessquare.CalendarPickerView;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
-public class MainActivityFragment extends Fragment {
+public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<List<CalendarEvent>> {
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
@@ -53,9 +57,29 @@ public class MainActivityFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        getLoaderManager().initLoader(0, null, this);
+
         AgendaViewAdapter agendaViewAdapter = new AgendaViewAdapter();
         mRecyclerView.setAdapter(agendaViewAdapter);
         agendaViewAdapter.shouldShowFooters(false);
         agendaViewAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public Loader<List<CalendarEvent>> onCreateLoader(int id, Bundle args) {
+        return new CalendarEventsLoader(getActivity());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<List<CalendarEvent>> loader, List<CalendarEvent> events) {
+        Log.d(TAG, "Load finished");
+        //TODO(amit.prabhudesai) Set the data source for the adapter
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<CalendarEvent>> loader) {
+        Log.d(TAG, "Loader reset");
+        //TODO(amit.prabhudesai) Clear the adapter data
     }
 }
