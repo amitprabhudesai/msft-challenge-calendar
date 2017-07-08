@@ -17,6 +17,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.timessquare.CalendarPickerView;
 
@@ -30,6 +32,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
 
 public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -37,6 +41,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
     private RecyclerView mRecyclerView;
     private AgendaViewAdapter mAdapter;
+    private TextView mTextView;
 
     private static final String[] INSTANCES_PROJECTION = new String[] {
             Instances.EVENT_ID,        // 0
@@ -58,6 +63,9 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     private static final int PROJECTION_BEGIN_INDEX          = 5;
     private static final int PROJECTION_END_INDEX            = 6;
 
+    private static final String PERMISSION_READ_CALENDAR = "android.permission.READ_CALENDAR";
+    private static final String TOAST_TEXT_MISSING_PERMISSION =
+            "Please check if you have granted the READ_CALENDAR permissions";
 
     public MainActivityFragment() {
     }
@@ -77,6 +85,9 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         calendar.init(today, nextYear.getTime())
                 .withSelectedDate(today);
 
+        // text view to be displayed if no events found
+        mTextView = (TextView) contentView.findViewById(R.id.text_view_no_events);
+
         // agenda view
         mRecyclerView = (RecyclerView) contentView.findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
@@ -93,11 +104,19 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        getLoaderManager().initLoader(0, null, this);
-        mAdapter = new AgendaViewAdapter();
-        mRecyclerView.setAdapter(mAdapter);
-        mAdapter.shouldShowFooters(false);
-        mAdapter.notifyDataSetChanged();
+        // only initialize the loader if the app has permissions
+        if (PERMISSION_GRANTED == getActivity()
+                .checkCallingOrSelfPermission(PERMISSION_READ_CALENDAR)) {
+
+            getLoaderManager().initLoader(0, null, this);
+            mAdapter = new AgendaViewAdapter();
+            mRecyclerView.setAdapter(mAdapter);
+            mAdapter.shouldShowFooters(false);
+        } else {
+            Toast.makeText(getActivity(),
+                    TOAST_TEXT_MISSING_PERMISSION, Toast.LENGTH_SHORT)
+                    .show();
+        }
     }
 
     @Override
@@ -160,6 +179,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             Log.w(TAG, e.getMessage());
         }
 
+        mTextView.setVisibility(View.GONE);
         mAdapter.setDataSource(result);
         mAdapter.notifyDataSetChanged();
     }
