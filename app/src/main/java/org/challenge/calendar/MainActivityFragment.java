@@ -142,8 +142,12 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         Map<String, List<CalendarEvent>> instances = new HashMap<>();
         final Calendar cal = Calendar.getInstance();
         final DateFormat formatter = new SimpleDateFormat("EEE, d MMM; HH:mm", Locale.US);
+
+        int offset = 0;
         String begin, end;
         try {
+            // today
+            long now = new Date().getTime() + DateUtils.DAY_IN_MILLIS;
             while (data.moveToNext()) {
                 long id = data.getLong(PROJECTION_EVENT_ID_INDEX);
                 long calId = data.getLong(PROJECTION_CALENDAR_ID_INDEX);
@@ -156,7 +160,6 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                 String[] split = begin.split(";");
                 String beginDay = split[0];
                 String beginTime = split[1];
-
                 CalendarEvent event = new CalendarEvent(id, calId, title, beginTime, location, allDay);
                 if (0 == allDay) {
                     long endVal = data.getLong(PROJECTION_END_INDEX);
@@ -173,8 +176,10 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                     List<CalendarEvent> events = new ArrayList<>();
                     events.add(event);
                     instances.put(beginDay, events);
+                    if (beginVal <= now) offset++;
                 } else {
                     instances.get(beginDay).add(event);
+                    if (beginVal <= now) offset++;
                 }
             }
         } catch (Exception e) {
@@ -183,6 +188,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
         mTextView.setVisibility(View.GONE);
         mAdapter.setDataSource(new AgendaDataSource(beginnings, instances));
+        mRecyclerView.scrollToPosition(offset);
         mAdapter.notifyDataSetChanged();
     }
 
