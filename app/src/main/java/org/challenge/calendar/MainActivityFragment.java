@@ -138,7 +138,8 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             return;
         }
 
-        Map<String, List<CalendarEvent>> result = new HashMap<>();
+        List<String> beginnings = new ArrayList<>();
+        Map<String, List<CalendarEvent>> instances = new HashMap<>();
         final Calendar cal = Calendar.getInstance();
         final DateFormat formatter = new SimpleDateFormat("EEE, d MMM; HH:mm", Locale.US);
         String begin, end;
@@ -167,12 +168,13 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                     event.setEndTime(endTime);
                 }
 
-                if (!result.containsKey(beginDay)) {
+                if (!instances.containsKey(beginDay)) {
+                    beginnings.add(beginDay);
                     List<CalendarEvent> events = new ArrayList<>();
                     events.add(event);
-                    result.put(beginDay, events);
+                    instances.put(beginDay, events);
                 } else {
-                    result.get(beginDay).add(event);
+                    instances.get(beginDay).add(event);
                 }
             }
         } catch (Exception e) {
@@ -180,7 +182,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         }
 
         mTextView.setVisibility(View.GONE);
-        mAdapter.setDataSource(result);
+        mAdapter.setDataSource(new AgendaDataSource(beginnings, instances));
         mAdapter.notifyDataSetChanged();
     }
 

@@ -14,6 +14,8 @@ import java.util.Map;
 
 public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAdapter.AgendaItemViewHolder> {
 
+    private static final String TAG = AgendaViewAdapter.class.getSimpleName();
+
     private final Map<String, List<CalendarEvent>> mEvents;
     private final Map<Integer, String> mSectionHeaders;
 
@@ -22,11 +24,11 @@ public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAd
         mEvents = new HashMap<>();
     }
 
-    public void setDataSource(Map<String, List<CalendarEvent>> events) {
-        mEvents.putAll(events);
+    public void setDataSource(AgendaDataSource dataSource) {
+        mEvents.putAll(dataSource.events());
         int i = 0;
-        for (final String key : mEvents.keySet()) {
-            mSectionHeaders.put(i++, key);
+        for (final String day: dataSource.days()) {
+            mSectionHeaders.put(i++, day);
         }
     }
 
