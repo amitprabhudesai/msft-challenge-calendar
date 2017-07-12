@@ -20,28 +20,31 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.sectionedrecyclerview.ItemCoord;
 import com.squareup.timessquare.CalendarPickerView;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static org.challenge.calendar.AgendaDataSource.INVALID_HEADER;
 
 
-public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MainActivityFragment extends Fragment implements
+        LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
+    private CalendarPickerView mCalendarView;
     private RecyclerView mRecyclerView;
     private AgendaViewAdapter mAdapter;
     private TextView mTextView;
+
+    private AgendaDataSource mDataSource;
 
     private static final String[] INSTANCES_PROJECTION = new String[] {
             Instances.EVENT_ID,        // 0
@@ -67,6 +70,31 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     private static final String TOAST_TEXT_MISSING_PERMISSION =
             "Please check if you have granted the READ_CALENDAR permissions";
 
+    private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
+        @Override
+        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+        }
+
+        @Override
+        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            try {
+                super.onScrolled(recyclerView, dx, dy);
+                //TODO(amit.prabhudesai) Add a note on what happens here
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                AgendaViewAdapter adapter = (AgendaViewAdapter) recyclerView.getAdapter();
+                ItemCoord coord = adapter.getRelativePosition(layoutManager.findFirstVisibleItemPosition());
+                long header = mDataSource.getHeader(coord.section());
+                if (INVALID_HEADER == header) {
+                    return;
+                }
+                mCalendarView.selectDate(new Date(header));
+            } catch (Exception e) {
+                Log.w(TAG, e.getMessage());
+            }
+        }
+    };
+
     public MainActivityFragment() {
     }
 
@@ -76,13 +104,16 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         final View contentView = inflater.inflate(R.layout.fragment_main, container, false);
 
         // calendar view
+        Calendar prevYear = Calendar.getInstance();
+        prevYear.add(Calendar.YEAR, -1);
+
         Calendar nextYear = Calendar.getInstance();
         nextYear.add(Calendar.YEAR, 1);
 
-        CalendarPickerView calendar =
+        mCalendarView =
                 (CalendarPickerView) contentView.findViewById(R.id.calendar_view);
         Date today = new Date();
-        calendar.init(today, nextYear.getTime())
+        mCalendarView.init(prevYear.getTime(), nextYear.getTime())
                 .withSelectedDate(today);
 
         // text view to be displayed if no events found
@@ -92,6 +123,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         mRecyclerView = (RecyclerView) contentView.findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(layoutManager);
+        mRecyclerView.addOnScrollListener(mOnScrollListener);
 
         DividerItemDecoration dividerItemDecoration =
                 new DividerItemDecoration(getActivity(), layoutManager.getOrientation());
@@ -109,6 +141,9 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
                 .checkCallingOrSelfPermission(PERMISSION_READ_CALENDAR)) {
 
             getLoaderManager().initLoader(0, null, this);
+            mDataSource = new AgendaDataSource(Calendar.getInstance(),
+                    new SimpleDateFormat("EEE, d MMM", Locale.US),
+                    new SimpleDateFormat("HH:mm", Locale.US));
             mAdapter = new AgendaViewAdapter();
             mRecyclerView.setAdapter(mAdapter);
             mAdapter.shouldShowFooters(false);
@@ -138,56 +173,47 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             return;
         }
 
-        List<String> beginnings = new ArrayList<>();
-        Map<String, List<CalendarEvent>> instances = new HashMap<>();
-        final Calendar cal = Calendar.getInstance();
-        final DateFormat formatter = new SimpleDateFormat("EEE, d MMM; HH:mm", Locale.US);
-
         int offset = 0;
-        String begin, end;
         try {
             // today
             long now = new Date().getTime() + DateUtils.DAY_IN_MILLIS;
-            while (data.moveToNext()) {
+            final Calendar cal = Calendar.getInstance();
+            final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+             while (data.moveToNext()) {
                 long id = data.getLong(PROJECTION_EVENT_ID_INDEX);
                 long calId = data.getLong(PROJECTION_CALENDAR_ID_INDEX);
                 String title = data.getString(PROJECTION_TITLE_INDEX);
                 String location = data.getString(PROJECTION_EVENT_LOCATION_INDEX);
                 int allDay = data.getInt(PROJECTION_ALL_DAY_INDEX);
                 long beginVal = data.getLong(PROJECTION_BEGIN_INDEX);
-                cal.setTimeInMillis(beginVal);
-                begin = formatter.format(cal.getTime());
-                String[] split = begin.split(";");
-                String beginDay = split[0];
-                String beginTime = split[1];
-                CalendarEvent event = new CalendarEvent(id, calId, title, beginTime, location, allDay);
+                CalendarEvent event = new CalendarEvent(id, calId, title, beginVal, location, allDay);
                 if (0 == allDay) {
                     long endVal = data.getLong(PROJECTION_END_INDEX);
-                    cal.setTimeInMillis(endVal);
-                    end = formatter.format(cal.getTime());
-                    split = end.split(";");
-                    String endTime = split[1];
-
-                    event.setEndTime(endTime);
+                    event.setEndTime(endVal);
                 }
 
-                if (!instances.containsKey(beginDay)) {
-                    beginnings.add(beginDay);
+                long section = computeSectionHeader(cal, beginVal, formatter);
+                if (INVALID_HEADER == section) continue;
+                mDataSource.addItem(section, event);
+                /*
+                if (!mAllEvents.containsKey(beginVal)) {
+                    mBeginValues.add(beginVal);
                     List<CalendarEvent> events = new ArrayList<>();
                     events.add(event);
-                    instances.put(beginDay, events);
+                    mAllEvents.put(beginVal, events);
                     if (beginVal <= now) offset++;
                 } else {
-                    instances.get(beginDay).add(event);
+                    mAllEvents.get(beginVal).add(event);
                     if (beginVal <= now) offset++;
                 }
+                */
             }
         } catch (Exception e) {
             Log.w(TAG, e.getMessage());
         }
 
         mTextView.setVisibility(View.GONE);
-        mAdapter.setDataSource(new AgendaDataSource(beginnings, instances));
+        mAdapter.setDataSource(mDataSource);
         mRecyclerView.scrollToPosition(offset);
         mAdapter.notifyDataSetChanged();
     }
@@ -195,5 +221,15 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
 
+    }
+
+    private long computeSectionHeader(Calendar cal, long beginVal, DateFormat formatter) {
+        cal.setTimeInMillis(beginVal);
+        try {
+            return formatter.parse(formatter.format(cal.getTime())).getTime();
+        } catch (ParseException e) {
+            // ignore, for now
+            return INVALID_HEADER;
+        }
     }
 }

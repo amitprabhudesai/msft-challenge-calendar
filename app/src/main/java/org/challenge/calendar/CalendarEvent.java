@@ -3,7 +3,8 @@ package org.challenge.calendar;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 /**
  * A calendar event.
@@ -14,14 +15,15 @@ public class CalendarEvent {
     private final String title;
     private final String location;
     private final boolean allDay;
-    private final String beginTime;
-
-    private String endTime;
+    // The begin and end times are stored as millis
+    // to be formatted as date/time for display
+    private final long beginTime;
+    private long endTime;
 
     public CalendarEvent(final long id,
                          final long calId,
                          final String title,
-                         final String beginTime,
+                         final long beginTime,
                          final String location,
                          final int allDay) {
         this.id = id;
@@ -48,15 +50,15 @@ public class CalendarEvent {
         return location;
     }
 
-    public final String getBeginTime() {
+    public final long getBeginTime() {
         return beginTime;
     }
 
-    public final String getEndTime() {
+    public final long getEndTime() {
         return endTime;
     }
 
-    public final void setEndTime(final String end) {
+    public final void setEndTime(final long end) {
         this.endTime = end;
     }
 
@@ -82,5 +84,25 @@ public class CalendarEvent {
             result = json.toString();
         }
         return result;
+    }
+
+    static final class Formatter {
+        private final Calendar calendar;
+        private final SimpleDateFormat formatter;
+
+        public Formatter(Calendar calendar, SimpleDateFormat formatter) {
+            this.calendar = calendar;
+            this.formatter = formatter;
+        }
+
+        public String beginTimeAsDisplayText(CalendarEvent event) {
+            calendar.setTimeInMillis(event.getBeginTime());
+            return formatter.format(calendar.getTime());
+        }
+
+        public String endTimeAsDisplayText(CalendarEvent event) {
+            calendar.setTimeInMillis(event.getEndTime());
+            return formatter.format(calendar.getTime());
+        }
     }
 }

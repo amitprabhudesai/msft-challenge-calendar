@@ -8,50 +8,42 @@ import android.widget.TextView;
 import com.afollestad.sectionedrecyclerview.SectionedRecyclerViewAdapter;
 import com.afollestad.sectionedrecyclerview.SectionedViewHolder;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAdapter.AgendaItemViewHolder> {
 
     private static final String TAG = AgendaViewAdapter.class.getSimpleName();
 
-    private final Map<String, List<CalendarEvent>> mEvents;
-    private final Map<Integer, String> mSectionHeaders;
+    private AgendaDataSource mDataSource;
 
     public AgendaViewAdapter() {
-        mSectionHeaders = new HashMap<>();
-        mEvents = new HashMap<>();
     }
 
     public void setDataSource(AgendaDataSource dataSource) {
-        mEvents.putAll(dataSource.events());
-        int i = 0;
-        for (final String day: dataSource.days()) {
-            mSectionHeaders.put(i++, day);
-        }
+        mDataSource = dataSource;
     }
 
     @Override
     public int getSectionCount() {
-        return mEvents.size();
+        return null == mDataSource ? 0 : mDataSource.getHeaderCount();
     }
 
     @Override
     public int getItemCount(int sectionIndex) {
-        return mEvents.get(mSectionHeaders.get(sectionIndex)).size();
+        return null == mDataSource ? 0 : mDataSource.getEventCount(sectionIndex);
     }
 
     @Override
     public void onBindHeaderViewHolder(AgendaItemViewHolder holder, int section, boolean expanded) {
-        holder.header.setText(mSectionHeaders.get(section));
+        holder.header.setText(mDataSource.getHeaderAsDisplayText(section));
     }
 
     @Override
     public void onBindViewHolder(AgendaItemViewHolder holder, int section, int relativePosition, int absolutePosition) {
-        CalendarEvent event = mEvents.get(mSectionHeaders.get(section)).get(relativePosition);
-        holder.beginTime.setText(event.getBeginTime());
-        holder.endTime.setText(event.getEndTime());
+        CalendarEvent event = mDataSource.getEventItem(section, relativePosition);
+        CalendarEvent.Formatter formatter =
+                new CalendarEvent.Formatter(mDataSource.getCalendar(),
+                        mDataSource.getEventTimeFormatter());
+        holder.beginTime.setText(formatter.beginTimeAsDisplayText(event));
+        holder.endTime.setText(formatter.endTimeAsDisplayText(event));
         holder.title.setText(event.getTitle());
         holder.location.setText(event.getLocation());
     }
