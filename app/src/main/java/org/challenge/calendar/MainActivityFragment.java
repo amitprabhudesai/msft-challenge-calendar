@@ -17,11 +17,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CalendarView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.sectionedrecyclerview.ItemCoord;
-import com.squareup.timessquare.CalendarPickerView;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -33,13 +33,12 @@ import java.util.Locale;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static org.challenge.calendar.AgendaDataSource.INVALID_HEADER;
 
-
 public class MainActivityFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
-    private CalendarPickerView mCalendarView;
+    private CalendarView mCalendarView;
     private RecyclerView mRecyclerView;
     private AgendaViewAdapter mAdapter;
     private TextView mTextView;
@@ -88,7 +87,9 @@ public class MainActivityFragment extends Fragment implements
                 if (INVALID_HEADER == header) {
                     return;
                 }
-                mCalendarView.selectDate(new Date(header));
+                mCalendarView.setDate(new Date(header).getTime(),
+                        false /* no animation */,
+                        true /* center */);
             } catch (Exception e) {
                 Log.w(TAG, e.getMessage());
             }
@@ -111,10 +112,10 @@ public class MainActivityFragment extends Fragment implements
         nextYear.add(Calendar.YEAR, 1);
 
         mCalendarView =
-                (CalendarPickerView) contentView.findViewById(R.id.calendar_view);
-        Date today = new Date();
-        mCalendarView.init(prevYear.getTime(), nextYear.getTime())
-                .withSelectedDate(today);
+                (CalendarView) contentView.findViewById(R.id.calendar_view);
+        mCalendarView.setMinDate(prevYear.getTimeInMillis());
+        mCalendarView.setMaxDate(nextYear.getTimeInMillis());
+        mCalendarView.setDate(new Date().getTime() /* today */);
 
         // text view to be displayed if no events found
         mTextView = (TextView) contentView.findViewById(R.id.text_view_no_events);

@@ -10,11 +10,10 @@
     tools:context="org.challenge.calendar.MainActivityFragment"
     tools:showIn="@layout/activity_main">
 
-    <com.squareup.timessquare.CalendarPickerView
+    <CalendarView
         android:id="@+id/calendar_view"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/fragment_calendar_view_height"
-        />
+        android:layout_height="@dimen/fragment_calendar_view_height"/>
 
     <TextView
         android:id="@+id/text_view_no_events"
