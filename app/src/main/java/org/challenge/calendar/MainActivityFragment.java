@@ -156,6 +156,17 @@ public class MainActivityFragment extends Fragment implements
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+
+        // Restart the loader when the containing activity is restarted
+        // This forces a fresh query and will help keep UI current
+        // This also fixes the case where InstantRun hot-swaps the changes
+        // and no events are displayed
+        getLoaderManager().restartLoader(0, null, this);
+    }
+
+    @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         long now = new Date().getTime();
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
