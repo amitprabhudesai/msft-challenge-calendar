@@ -159,15 +159,27 @@ public class MainActivityFragment extends Fragment implements
     public void onStart() {
         super.onStart();
 
-        // Restart the loader when the containing activity is restarted
-        // This forces a fresh query and will help keep UI current
-        // This also fixes the case where InstantRun hot-swaps the changes
-        // and no events are displayed
-        // but before we do it, we must clear the data source if it exists
-        if (mDataSource != null) {
-            mDataSource.clear();
+        if (PERMISSION_GRANTED == getActivity()
+                .checkCallingOrSelfPermission(PERMISSION_READ_CALENDAR)) {
+            // Restart the loader when the containing activity is restarted
+            // This forces a fresh query and will help keep UI current
+            // This also fixes the case where InstantRun hot-swaps the changes
+            // and no events are displayed
+            // but before we do it, we must clear the data source if it exists
+            if (null == mDataSource) {
+                mDataSource = new AgendaDataSource(Calendar.getInstance(),
+                        new SimpleDateFormat("EEE, d MMM", Locale.US),
+                        new SimpleDateFormat("HH:mm", Locale.US));
+            } else {
+                mDataSource.clear();
+            }
+            if (null == mAdapter) {
+                mAdapter = new AgendaViewAdapter();
+            }
+            mAdapter.shouldShowFooters(false);
+            mRecyclerView.setAdapter(mAdapter);
+            getLoaderManager().restartLoader(0, null, this);
         }
-        getLoaderManager().restartLoader(0, null, this);
     }
 
     @Override
@@ -189,12 +201,9 @@ public class MainActivityFragment extends Fragment implements
             return;
         }
 
-        int offset = 0;
+        final Calendar cal = Calendar.getInstance();
+        final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         try {
-            // today
-            long now = new Date().getTime() + DateUtils.DAY_IN_MILLIS;
-            final Calendar cal = Calendar.getInstance();
-            final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
              while (data.moveToNext()) {
                 long id = data.getLong(PROJECTION_EVENT_ID_INDEX);
                 long calId = data.getLong(PROJECTION_CALENDAR_ID_INDEX);
@@ -230,7 +239,9 @@ public class MainActivityFragment extends Fragment implements
 
         mTextView.setVisibility(View.GONE);
         mAdapter.setDataSource(mDataSource);
-        mRecyclerView.scrollToPosition(offset);
+        long currentSection =
+                computeSectionHeader(cal, new Date().getTime() /* now */, formatter);
+        mRecyclerView.scrollToPosition(mDataSource.rank(currentSection));
         mAdapter.notifyDataSetChanged();
     }
 

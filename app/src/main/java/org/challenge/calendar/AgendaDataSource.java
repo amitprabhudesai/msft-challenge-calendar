@@ -48,6 +48,15 @@ public final class AgendaDataSource {
         getItems(header).add(item);
     }
 
+    public int rank(long header) {
+        int section = headers.indexOf(header);
+        int rank = 0;
+        for (int i = 0; i <= section; i++) {
+            rank += events.get(headers.get(i)).size();
+        }
+        return rank;
+    }
+
     public int getHeaderCount() {
         return headers.size();
     }
