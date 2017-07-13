@@ -163,6 +163,10 @@ public class MainActivityFragment extends Fragment implements
         // This forces a fresh query and will help keep UI current
         // This also fixes the case where InstantRun hot-swaps the changes
         // and no events are displayed
+        // but before we do it, we must clear the data source if it exists
+        if (mDataSource != null) {
+            mDataSource.clear();
+        }
         getLoaderManager().restartLoader(0, null, this);
     }
 

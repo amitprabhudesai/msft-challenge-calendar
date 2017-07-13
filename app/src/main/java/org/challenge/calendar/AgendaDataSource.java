@@ -27,6 +27,11 @@ public final class AgendaDataSource {
         this.events = new HashMap<>();
     }
 
+    public void clear() {
+        headers.clear();
+        events.clear();
+    }
+
     public Calendar getCalendar() {
         return calendar;
     }
