@@ -15,6 +15,12 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/fragment_calendar_view_height"/>
 
+    <View style="@style/HorizontalDivider"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="1dp"/>
+    <View style="@style/HorizontalDivider"
+        android:layout_marginBottom="8dp"/>
+
     <TextView
         android:id="@+id/text_view_no_events"
         android:layout_width="match_parent"

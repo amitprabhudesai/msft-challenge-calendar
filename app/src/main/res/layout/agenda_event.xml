@@ -36,7 +36,7 @@
             android:textStyle="normal" />
     </RelativeLayout>
 
-    <View style="@style/Divider"
+    <View style="@style/VerticalDivider"
         android:layout_marginTop="2dp"
         android:layout_height="@dimen/agenda_view_column_divider_height"
         android:layout_marginLeft="4dp"
