@@ -8,6 +8,9 @@ import android.widget.TextView;
 import com.afollestad.sectionedrecyclerview.SectionedRecyclerViewAdapter;
 import com.afollestad.sectionedrecyclerview.SectionedViewHolder;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAdapter.AgendaItemViewHolder> {
 
     private static final String TAG = AgendaViewAdapter.class.getSimpleName();
@@ -42,8 +45,18 @@ public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAd
         CalendarEvent.Formatter formatter =
                 new CalendarEvent.Formatter(mDataSource.getCalendar(),
                         mDataSource.getEventTimeFormatter());
-        holder.beginTime.setText(formatter.beginTimeAsDisplayText(event));
-        holder.endTime.setText(formatter.endTimeAsDisplayText(event));
+        if (event.isAllDay()) {
+            holder.beginTime.setVisibility(GONE);
+            holder.endTime.setVisibility(GONE);
+            holder.allDay.setText(R.string.text_all_day_event);
+            holder.allDay.setVisibility(VISIBLE);
+        } else {
+            holder.allDay.setVisibility(GONE);
+            holder.beginTime.setText(formatter.beginTimeAsDisplayText(event));
+            holder.endTime.setText(formatter.endTimeAsDisplayText(event));
+            holder.beginTime.setVisibility(VISIBLE);
+            holder.endTime.setVisibility(VISIBLE);
+        }
         holder.title.setText(event.getTitle());
         holder.location.setText(event.getLocation());
     }
@@ -72,6 +85,7 @@ public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAd
     static final class AgendaItemViewHolder extends SectionedViewHolder {
 
         final TextView header;
+        final TextView allDay;
         final TextView beginTime;
         final TextView endTime;
         final TextView title;
@@ -81,6 +95,7 @@ public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAd
             super(headerView);
 
             this.header = (TextView) headerView.findViewById(R.id.text_day_header);
+            this.allDay = (TextView) itemView.findViewById(R.id.text_all_day);
             this.beginTime = (TextView) itemView.findViewById(R.id.text_begin_time);
             this.endTime = (TextView) itemView.findViewById(R.id.text_end_time);
             this.title = (TextView) itemView.findViewById(R.id.text_event_title);

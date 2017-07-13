@@ -6,6 +6,7 @@
 
     <dimen name="fragment_calendar_view_height">128dp</dimen>
     <dimen name="agenda_view_row_height">64dp</dimen>
+    <dimen name="agenda_view_event_time_cell_width">48dp</dimen>
     <dimen name="agenda_view_column_divider_height">62dp</dimen>
 
 </resources>
