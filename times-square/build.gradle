@@ -1,0 +1,38 @@
+apply plugin: 'com.android.library'
+apply plugin: 'checkstyle'
+apply from: '../dependencies.gradle'
+
+task checkstyle(type: Checkstyle) {
+  configFile rootProject.file('checkstyle.xml')
+  source 'src/main/java'
+  ignoreFailures false
+  showViolations true
+  include '**/*.java'
+
+  classpath = files()
+}
+
+afterEvaluate {
+  if (project.tasks.findByName('check')) {
+    check.dependsOn('checkstyle')
+  }
+}
+
+android {
+  compileSdkVersion versions.compileSdk 
+  buildToolsVersion versions.buildTools 
+
+  defaultConfig {
+    minSdkVersion versions.minSdk 
+    targetSdkVersion versions.CompileSdk
+  }
+
+  lintOptions {
+    warning 'MissingTranslation'
+    textReport true
+    textOutput 'stdout'
+  }
+}
+
+
+//apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
