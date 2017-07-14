@@ -8,6 +8,7 @@
         android:id="@+id/text_day_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/calendar_active_month_bg"
         android:textStyle="bold"
         android:textSize="24sp"/>
 </LinearLayout>

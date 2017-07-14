@@ -22,8 +22,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.afollestad.sectionedrecyclerview.ItemCoord;
 import com.squareup.timessquare.CalendarPickerView;
+
+import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -43,7 +44,7 @@ public class MainActivityFragment extends Fragment implements
 
     private CalendarPickerView mCalendarView;
     private RecyclerView mRecyclerView;
-    private AgendaViewAdapter mAdapter;
+    private StickyAgendaViewAdapter mStickyAdapter;
     private TextView mTextView;
 
     private AgendaDataSource mDataSource;
@@ -70,30 +71,13 @@ public class MainActivityFragment extends Fragment implements
 
     private static final int PERMISSIONS_REQUEST_READ_CALENDAR = 1;
 
-    private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
+    private final StickyHeaderLayoutManager.HeaderPositionChangedCallback mHeaderPositionCallback = new StickyHeaderLayoutManager.HeaderPositionChangedCallback() {
         @Override
-        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-            super.onScrollStateChanged(recyclerView, newState);
-        }
-
-        @Override
-        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-            try {
-                super.onScrolled(recyclerView, dx, dy);
-                // Use the LayoutManager to get the position of the first fully visible item
-                // Then check if this is a section header, and if yes, set the date in the
-                // calendar view
-                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                AgendaViewAdapter adapter = (AgendaViewAdapter) recyclerView.getAdapter();
-                ItemCoord coord = adapter.getRelativePosition(layoutManager.findFirstCompletelyVisibleItemPosition());
-                if (0 == coord.relativePos()) {
-                    long time = mDataSource.getTime(coord.section());
-                    if (time != INVALID_TIME) {
-                        mCalendarView.selectDate(new Date(time), true);
-                    }
-                }
-            } catch (Exception e) {
-                Log.w(TAG, e.getMessage());
+        public void onHeaderPositionChanged(int section, View header,
+                                            StickyHeaderLayoutManager.HeaderPosition oldPosition,
+                                            StickyHeaderLayoutManager.HeaderPosition newPosition) {
+            if (StickyHeaderLayoutManager.HeaderPosition.STICKY == newPosition) {
+                mCalendarView.selectDate(new Date(mDataSource.getTime(section)), true);
             }
         }
     };
@@ -102,7 +86,7 @@ public class MainActivityFragment extends Fragment implements
         @Override
         public void onDateSelected(Date date) {
             mRecyclerView.scrollToPosition(
-                    mDataSource.getNumEventsBefore(
+                    mStickyAdapter.getAdapterPositionForSectionHeader(
                             mDataSource.getSectionCeil(date.getTime())));
         }
 
@@ -151,12 +135,12 @@ public class MainActivityFragment extends Fragment implements
 
         // agenda view
         mRecyclerView = (RecyclerView) contentView.findViewById(R.id.recycler_view);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+        StickyHeaderLayoutManager layoutManager = new StickyHeaderLayoutManager();
+        layoutManager.setHeaderPositionChangedCallback(mHeaderPositionCallback);
         mRecyclerView.setLayoutManager(layoutManager);
-        mRecyclerView.addOnScrollListener(mOnScrollListener);
 
         DividerItemDecoration dividerItemDecoration =
-                new DividerItemDecoration(getActivity(), layoutManager.getOrientation());
+                new DividerItemDecoration(getActivity(), LinearLayoutManager.HORIZONTAL);
         mRecyclerView.addItemDecoration(dividerItemDecoration);
 
         return contentView;
@@ -178,9 +162,8 @@ public class MainActivityFragment extends Fragment implements
         mDataSource = new AgendaDataSource(Calendar.getInstance(),
                 new SimpleDateFormat("EEE, d MMM", Locale.US),
                 new SimpleDateFormat("HH:mm", Locale.US));
-        mAdapter = new AgendaViewAdapter();
-        mRecyclerView.setAdapter(mAdapter);
-        mAdapter.shouldShowFooters(false);
+        mStickyAdapter = new StickyAgendaViewAdapter();
+        mRecyclerView.setAdapter(mStickyAdapter);
         getLoaderManager().initLoader(0, null, this);
     }
 
@@ -228,11 +211,11 @@ public class MainActivityFragment extends Fragment implements
         }
 
         mTextView.setVisibility(View.GONE);
-        mAdapter.setDataSource(mDataSource);
+        mStickyAdapter.setDataSource(mDataSource);
+        mStickyAdapter.notifyAllSectionsDataSetChanged();
         mRecyclerView.scrollToPosition(
-                mDataSource.getNumEventsBefore(
+                mStickyAdapter.getAdapterPositionForSectionHeader(
                         mDataSource.getSectionFloor(new Date().getTime())));
-        mAdapter.notifyDataSetChanged();
     }
 
     @Override

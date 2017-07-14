@@ -1,1 +1,1 @@
-include ':app',':times-square',':sectioned-recyclerview'
+include ':app',':times-square'
