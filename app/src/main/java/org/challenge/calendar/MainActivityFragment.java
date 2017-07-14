@@ -5,8 +5,11 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract.Instances;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.DividerItemDecoration;
@@ -19,7 +22,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CalendarView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.afollestad.sectionedrecyclerview.ItemCoord;
 
@@ -30,11 +32,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import static android.Manifest.permission.READ_CALENDAR;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static org.challenge.calendar.AgendaDataSource.INVALID_TIME;
 
 public class MainActivityFragment extends Fragment implements
-        LoaderManager.LoaderCallbacks<Cursor> {
+        LoaderManager.LoaderCallbacks<Cursor>, ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
@@ -65,9 +68,7 @@ public class MainActivityFragment extends Fragment implements
     private static final int PROJECTION_BEGIN_INDEX          = 5;
     private static final int PROJECTION_END_INDEX            = 6;
 
-    private static final String PERMISSION_READ_CALENDAR = "android.permission.READ_CALENDAR";
-    private static final String TOAST_TEXT_MISSING_PERMISSION =
-            "Please check if you have granted the READ_CALENDAR permissions";
+    private static final int PERMISSIONS_REQUEST_READ_CALENDAR = 1;
 
     private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
         @Override
@@ -97,6 +98,20 @@ public class MainActivityFragment extends Fragment implements
     };
 
     public MainActivityFragment() {
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            default:
+                break;
+            case PERMISSIONS_REQUEST_READ_CALENDAR:
+                if (grantResults.length > 0 && grantResults[0] == PERMISSION_GRANTED) {
+                    init();
+                }
+                break;
+        }
     }
 
     @Override
@@ -138,48 +153,21 @@ public class MainActivityFragment extends Fragment implements
         super.onActivityCreated(savedInstanceState);
 
         // only initialize the loader if the app has permissions
-        if (PERMISSION_GRANTED == getActivity()
-                .checkCallingOrSelfPermission(PERMISSION_READ_CALENDAR)) {
-
-            getLoaderManager().initLoader(0, null, this);
-            mDataSource = new AgendaDataSource(Calendar.getInstance(),
-                    new SimpleDateFormat("EEE, d MMM", Locale.US),
-                    new SimpleDateFormat("HH:mm", Locale.US));
-            mAdapter = new AgendaViewAdapter();
-            mRecyclerView.setAdapter(mAdapter);
-            mAdapter.shouldShowFooters(false);
+        if (PERMISSION_GRANTED != ContextCompat.checkSelfPermission(getActivity(), READ_CALENDAR)) {
+            requestPermissions(new String[]{READ_CALENDAR}, PERMISSIONS_REQUEST_READ_CALENDAR);
         } else {
-            Toast.makeText(getActivity(),
-                    TOAST_TEXT_MISSING_PERMISSION, Toast.LENGTH_SHORT)
-                    .show();
+            init();
         }
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        if (PERMISSION_GRANTED == getActivity()
-                .checkCallingOrSelfPermission(PERMISSION_READ_CALENDAR)) {
-            // Restart the loader when the containing activity is restarted
-            // This forces a fresh query and will help keep UI current
-            // This also fixes the case where InstantRun hot-swaps the changes
-            // and no events are displayed
-            // but before we do it, we must clear the data source if it exists
-            if (null == mDataSource) {
-                mDataSource = new AgendaDataSource(Calendar.getInstance(),
-                        new SimpleDateFormat("EEE, d MMM", Locale.US),
-                        new SimpleDateFormat("HH:mm", Locale.US));
-            } else {
-                mDataSource.clear();
-            }
-            if (null == mAdapter) {
-                mAdapter = new AgendaViewAdapter();
-            }
-            mAdapter.shouldShowFooters(false);
-            mRecyclerView.setAdapter(mAdapter);
-            getLoaderManager().restartLoader(0, null, this);
-        }
+    private void init() {
+        mDataSource = new AgendaDataSource(Calendar.getInstance(),
+                new SimpleDateFormat("EEE, d MMM", Locale.US),
+                new SimpleDateFormat("HH:mm", Locale.US));
+        mAdapter = new AgendaViewAdapter();
+        mRecyclerView.setAdapter(mAdapter);
+        mAdapter.shouldShowFooters(false);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -204,7 +192,7 @@ public class MainActivityFragment extends Fragment implements
         final Calendar cal = Calendar.getInstance();
         final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         try {
-             while (data.moveToNext()) {
+            while (data.moveToNext()) {
                 long id = data.getLong(PROJECTION_EVENT_ID_INDEX);
                 long calId = data.getLong(PROJECTION_CALENDAR_ID_INDEX);
                 String title = data.getString(PROJECTION_TITLE_INDEX);
@@ -220,18 +208,6 @@ public class MainActivityFragment extends Fragment implements
                 long section = computeSectionHeader(cal, beginVal, formatter);
                 if (INVALID_TIME == section) continue;
                 mDataSource.addEvent(section, event);
-                /*
-                if (!mAllEvents.containsKey(beginVal)) {
-                    mBeginValues.add(beginVal);
-                    List<CalendarEvent> events = new ArrayList<>();
-                    events.add(event);
-                    mAllEvents.put(beginVal, events);
-                    if (beginVal <= now) offset++;
-                } else {
-                    mAllEvents.get(beginVal).add(event);
-                    if (beginVal <= now) offset++;
-                }
-                */
             }
         } catch (Exception e) {
             Log.w(TAG, e.getMessage());
