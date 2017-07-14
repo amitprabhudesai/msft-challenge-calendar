@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static org.challenge.calendar.AgendaDataSource.INVALID_HEADER;
+import static org.challenge.calendar.AgendaDataSource.INVALID_TIME;
 
 public class MainActivityFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
@@ -83,11 +83,11 @@ public class MainActivityFragment extends Fragment implements
                 LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
                 AgendaViewAdapter adapter = (AgendaViewAdapter) recyclerView.getAdapter();
                 ItemCoord coord = adapter.getRelativePosition(layoutManager.findFirstVisibleItemPosition());
-                long header = mDataSource.getHeader(coord.section());
-                if (INVALID_HEADER == header) {
+                long time = mDataSource.getTime(coord.section());
+                if (INVALID_TIME == time) {
                     return;
                 }
-                mCalendarView.setDate(new Date(header).getTime(),
+                mCalendarView.setDate(new Date(time).getTime(),
                         false /* no animation */,
                         true /* center */);
             } catch (Exception e) {
@@ -218,8 +218,8 @@ public class MainActivityFragment extends Fragment implements
                 }
 
                 long section = computeSectionHeader(cal, beginVal, formatter);
-                if (INVALID_HEADER == section) continue;
-                mDataSource.addItem(section, event);
+                if (INVALID_TIME == section) continue;
+                mDataSource.addEvent(section, event);
                 /*
                 if (!mAllEvents.containsKey(beginVal)) {
                     mBeginValues.add(beginVal);
@@ -256,7 +256,7 @@ public class MainActivityFragment extends Fragment implements
             return formatter.parse(formatter.format(cal.getTime())).getTime();
         } catch (ParseException e) {
             // ignore, for now
-            return INVALID_HEADER;
+            return INVALID_TIME;
         }
     }
 }

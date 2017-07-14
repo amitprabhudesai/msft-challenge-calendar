@@ -26,7 +26,7 @@ public class AgendaViewAdapter extends SectionedRecyclerViewAdapter<AgendaViewAd
 
     @Override
     public int getSectionCount() {
-        return null == mDataSource ? 0 : mDataSource.getHeaderCount();
+        return null == mDataSource ? 0 : mDataSource.getSectionCount();
     }
 
     @Override

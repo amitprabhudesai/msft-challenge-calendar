@@ -3,7 +3,7 @@ package org.challenge.calendar;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,10 +12,19 @@ public final class AgendaDataSource {
     private final Calendar calendar;
     private final SimpleDateFormat sectionHeaderFormatter;
     private final SimpleDateFormat eventTimeFormatter;
-    private final List<Long> headers;
+    // Maintain a list of events keyed by the day represented
+    // as time in millis since epoch
+    // This is done to be able to easily compute rank() query
+    // where we want to get count of events that occur earlier
+    // than a given time
+    // For display, we use appropriate {@link SimpleDateFormat}
+    // formatters to convert from the this to the display text
+    // Vis-a-vis the AgendaView, the keys represent the sections,
+    // while the values (list of events) represent the collection
+    // of events in that section
     private final Map<Long, List<CalendarEvent>> events;
 
-    static final long INVALID_HEADER = Long.MIN_VALUE;
+    static final long INVALID_TIME = Long.MIN_VALUE;
 
     public AgendaDataSource(Calendar calendar,
                             SimpleDateFormat sectionHeaderFormatter,
@@ -23,12 +32,10 @@ public final class AgendaDataSource {
         this.calendar = calendar;
         this.sectionHeaderFormatter = sectionHeaderFormatter;
         this.eventTimeFormatter = eventTimeFormatter;
-        this.headers = new ArrayList<>();
-        this.events = new HashMap<>();
+        this.events = new LinkedHashMap<>();
     }
 
     public void clear() {
-        headers.clear();
         events.clear();
     }
 
@@ -44,55 +51,64 @@ public final class AgendaDataSource {
         return eventTimeFormatter;
     }
 
-    public void addItem(long header, CalendarEvent item) {
-        getItems(header).add(item);
+    public void addEvent(long time, CalendarEvent event) {
+        getEvents(time).add(event);
     }
 
-    public int rank(long header) {
-        int section = headers.indexOf(header);
+    // count of events that occur earlier than a given time
+    public int rank(long time) {
         int rank = 0;
-        for (int i = 0; i <= section; i++) {
-            rank += events.get(headers.get(i)).size();
+        for (long val : events.keySet()) {
+            if (val <= time) {
+                rank += events.get(val).size();
+            }
         }
         return rank;
     }
 
-    public int getHeaderCount() {
-        return headers.size();
+    public int getSectionCount() {
+        return events.size();
     }
 
     public int getEventCount(int section) {
-        long header = getHeader(section);
-        if (INVALID_HEADER == header) return 0;
-        return events.get(header).size();
+        long time = getTime(section);
+        if (INVALID_TIME == time) return 0;
+        return events.get(time).size();
     }
 
-    public long getHeader(int section) {
-        return section <= headers.size() ? headers.get(section) : INVALID_HEADER;
+    public long getTime(int section) {
+        return section <= getSectionCount() ? fromSection(section) : INVALID_TIME;
     }
 
     public String getHeaderAsDisplayText(int section) {
-        calendar.setTimeInMillis(getHeader(section));
+        calendar.setTimeInMillis(getTime(section));
         return sectionHeaderFormatter.format(calendar.getTime());
     }
 
     public CalendarEvent getEventItem(int section, int position) {
-        return events.get(getHeader(section)).get(position);
+        return events.get(getTime(section)).get(position);
     }
 
-    private boolean hasHeader(long header) {
-        return headers.contains(header);
+    private boolean hasSection(long time) {
+        return events.keySet().contains(time);
     }
 
-    private void addHeader(long header) {
-        headers.add(header);
-        events.put(header, new ArrayList<CalendarEvent>());
-    }
-
-    private List<CalendarEvent> getItems(long header) {
-        if (!hasHeader(header)) {
-            addHeader(header);
+    private long fromSection(int section) {
+        int i = 0;
+        for (long val : events.keySet()) {
+            if (i++ == section) return val;
         }
-        return events.get(header);
+        return INVALID_TIME;
+    }
+
+    private void addSection(long time) {
+        events.put(time, new ArrayList<CalendarEvent>());
+    }
+
+    private List<CalendarEvent> getEvents(long time) {
+        if (!hasSection(time)) {
+            addSection(time);
+        }
+        return events.get(time);
     }
 }
