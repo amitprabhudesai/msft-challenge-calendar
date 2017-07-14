@@ -55,15 +55,44 @@ public final class AgendaDataSource {
         getEvents(time).add(event);
     }
 
-    // count of events that occur earlier than a given time
-    public int rank(long time) {
-        int rank = 0;
-        for (long val : events.keySet()) {
-            if (val <= time) {
-                rank += events.get(val).size();
+    public int getSectionCeil(long time) {
+        int ceil = 0;
+        boolean stop = false;
+        for (Map.Entry<Long, List<CalendarEvent>> entry : events.entrySet()) {
+            for (CalendarEvent event : entry.getValue()) {
+                if (event.getBeginTime() >= time) {
+                    stop = true;
+                    break;
+                }
             }
+            if (stop) break;
+            ceil++;
         }
-        return rank;
+        return ceil;
+    }
+
+    public int getSectionFloor(long time) {
+        int floor = 0;
+        boolean stop = false;
+        for (Map.Entry<Long, List<CalendarEvent>> entry : events.entrySet()) {
+            for (CalendarEvent event : entry.getValue()) {
+                if (event.getBeginTime() > time) {
+                    stop = true;
+                    break;
+                }
+            }
+            if (stop) break;
+            floor++;
+        }
+        return floor;
+    }
+
+    public int getNumEventsBefore(int section) {
+        int count = 0;
+        for (int i = 0; i <= section; i++) {
+            count += getEventCount(i);
+        }
+        return count;
     }
 
     public int getSectionCount() {

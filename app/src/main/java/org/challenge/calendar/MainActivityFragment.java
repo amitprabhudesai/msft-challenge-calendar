@@ -20,10 +20,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CalendarView;
 import android.widget.TextView;
 
 import com.afollestad.sectionedrecyclerview.ItemCoord;
+import com.squareup.timessquare.CalendarPickerView;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -41,7 +41,7 @@ public class MainActivityFragment extends Fragment implements
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
-    private CalendarView mCalendarView;
+    private CalendarPickerView mCalendarView;
     private RecyclerView mRecyclerView;
     private AgendaViewAdapter mAdapter;
     private TextView mTextView;
@@ -80,27 +80,34 @@ public class MainActivityFragment extends Fragment implements
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
             try {
                 super.onScrolled(recyclerView, dx, dy);
-                //TODO(amit.prabhudesai) Add a note on what happens here
+                // Use the LayoutManager to get the position of the first fully visible item
+                // Then check if this is a section header, and if yes, set the date in the
+                // calendar view
                 LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
                 AgendaViewAdapter adapter = (AgendaViewAdapter) recyclerView.getAdapter();
-                ItemCoord coord = adapter.getRelativePosition(layoutManager.findFirstVisibleItemPosition());
-                long time = mDataSource.getTime(coord.section());
-                if (INVALID_TIME == time) {
-                    return;
+                ItemCoord coord = adapter.getRelativePosition(layoutManager.findFirstCompletelyVisibleItemPosition());
+                if (0 == coord.relativePos()) {
+                    long time = mDataSource.getTime(coord.section());
+                    if (time != INVALID_TIME) {
+                        mCalendarView.selectDate(new Date(time), true);
+                    }
                 }
-                mCalendarView.setDate(new Date(time).getTime(),
-                        false /* no animation */,
-                        true /* center */);
             } catch (Exception e) {
                 Log.w(TAG, e.getMessage());
             }
         }
     };
 
-    private final CalendarView.OnDateChangeListener mOnDateChangeListener = new CalendarView.OnDateChangeListener() {
+    private final CalendarPickerView.OnDateSelectedListener mOnDateSelectedListener = new CalendarPickerView.OnDateSelectedListener() {
         @Override
-        public void onSelectedDayChange(CalendarView calendarView, int year, int month, int dayOfMonth) {
-            mRecyclerView.scrollToPosition(mDataSource.rank(getDateTime(year, month, dayOfMonth)));
+        public void onDateSelected(Date date) {
+            mRecyclerView.scrollToPosition(
+                    mDataSource.getNumEventsBefore(
+                            mDataSource.getSectionCeil(date.getTime())));
+        }
+
+        @Override
+        public void onDateUnselected(Date date) {
         }
     };
 
@@ -161,11 +168,10 @@ public class MainActivityFragment extends Fragment implements
         nextYear.add(Calendar.YEAR, 1);
 
         mCalendarView =
-                (CalendarView) contentView.findViewById(R.id.calendar_view);
-        mCalendarView.setOnDateChangeListener(mOnDateChangeListener);
-        mCalendarView.setMinDate(prevYear.getTimeInMillis());
-        mCalendarView.setMaxDate(nextYear.getTimeInMillis());
-        mCalendarView.setDate(new Date().getTime() /* today */);
+                (CalendarPickerView) contentView.findViewById(R.id.calendar_view);
+        Date today = new Date();
+        mCalendarView.init(prevYear.getTime(), nextYear.getTime()).withSelectedDate(today);
+        mCalendarView.setOnDateSelectedListener(mOnDateSelectedListener);
 
         // text view to be displayed if no events found
         mTextView = (TextView) contentView.findViewById(R.id.text_view_no_events);
@@ -209,8 +215,8 @@ public class MainActivityFragment extends Fragment implements
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         long now = new Date().getTime();
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
-        ContentUris.appendId(builder, now - DateUtils.DAY_IN_MILLIS * 30);
-        ContentUris.appendId(builder, now + DateUtils.DAY_IN_MILLIS * 30);
+        ContentUris.appendId(builder, now - DateUtils.WEEK_IN_MILLIS);
+        ContentUris.appendId(builder, now + DateUtils.WEEK_IN_MILLIS);
 
         return new CursorLoader(getActivity(),
                 builder.build(), INSTANCES_PROJECTION,
@@ -250,9 +256,9 @@ public class MainActivityFragment extends Fragment implements
 
         mTextView.setVisibility(View.GONE);
         mAdapter.setDataSource(mDataSource);
-        long currentSection =
-                computeSectionHeader(cal, new Date().getTime() /* now */, formatter);
-        mRecyclerView.scrollToPosition(mDataSource.rank(currentSection));
+        mRecyclerView.scrollToPosition(
+                mDataSource.getNumEventsBefore(
+                        mDataSource.getSectionFloor(new Date().getTime())));
         mAdapter.notifyDataSetChanged();
     }
 
