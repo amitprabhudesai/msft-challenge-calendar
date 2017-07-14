@@ -111,33 +111,6 @@ public class MainActivityFragment extends Fragment implements
         }
     };
 
-    private static long getDateTime(int year, int month, int dayOfMonth) {
-        Date date = new Date();
-        StringBuilder builder = new StringBuilder();
-        builder.append(year).append("-");
-        if (month < 9) {
-            builder.append("0").append(month+1);
-        } else {
-            builder.append(month+1);
-        }
-        builder.append("-");
-        if (dayOfMonth < 10) {
-            builder.append("0").append(dayOfMonth);
-        } else {
-            builder.append(dayOfMonth);
-        }
-
-        String dateString = builder.toString();
-        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        try {
-            date = formatter.parse(dateString);
-        } catch (ParseException e) {
-            Log.w(TAG, "Unable to parse date-string: " +
-                    dateString + "; error: " + e.getMessage());
-        }
-        return date.getTime();
-    }
-
     public MainActivityFragment() {
     }
 
