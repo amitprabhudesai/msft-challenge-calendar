@@ -97,6 +97,40 @@ public class MainActivityFragment extends Fragment implements
         }
     };
 
+    private final CalendarView.OnDateChangeListener mOnDateChangeListener = new CalendarView.OnDateChangeListener() {
+        @Override
+        public void onSelectedDayChange(CalendarView calendarView, int year, int month, int dayOfMonth) {
+            mRecyclerView.scrollToPosition(mDataSource.rank(getDateTime(year, month, dayOfMonth)));
+        }
+    };
+
+    private static long getDateTime(int year, int month, int dayOfMonth) {
+        Date date = new Date();
+        StringBuilder builder = new StringBuilder();
+        builder.append(year).append("-");
+        if (month < 9) {
+            builder.append("0").append(month+1);
+        } else {
+            builder.append(month+1);
+        }
+        builder.append("-");
+        if (dayOfMonth < 10) {
+            builder.append("0").append(dayOfMonth);
+        } else {
+            builder.append(dayOfMonth);
+        }
+
+        String dateString = builder.toString();
+        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        try {
+            date = formatter.parse(dateString);
+        } catch (ParseException e) {
+            Log.w(TAG, "Unable to parse date-string: " +
+                    dateString + "; error: " + e.getMessage());
+        }
+        return date.getTime();
+    }
+
     public MainActivityFragment() {
     }
 
@@ -128,6 +162,7 @@ public class MainActivityFragment extends Fragment implements
 
         mCalendarView =
                 (CalendarView) contentView.findViewById(R.id.calendar_view);
+        mCalendarView.setOnDateChangeListener(mOnDateChangeListener);
         mCalendarView.setMinDate(prevYear.getTimeInMillis());
         mCalendarView.setMaxDate(nextYear.getTimeInMillis());
         mCalendarView.setDate(new Date().getTime() /* today */);
@@ -174,8 +209,8 @@ public class MainActivityFragment extends Fragment implements
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         long now = new Date().getTime();
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
-        ContentUris.appendId(builder, now - DateUtils.WEEK_IN_MILLIS);
-        ContentUris.appendId(builder, now + DateUtils.WEEK_IN_MILLIS);
+        ContentUris.appendId(builder, now - DateUtils.DAY_IN_MILLIS * 30);
+        ContentUris.appendId(builder, now + DateUtils.DAY_IN_MILLIS * 30);
 
         return new CursorLoader(getActivity(),
                 builder.build(), INSTANCES_PROJECTION,
