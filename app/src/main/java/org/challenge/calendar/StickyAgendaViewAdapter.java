@@ -1,6 +1,5 @@
 package org.challenge.calendar;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +10,9 @@ import org.zakariya.stickyheaders.SectioningAdapter;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+/**
+ * Adapter for the agenda view with sticky section headers.
+ */
 public class StickyAgendaViewAdapter extends SectioningAdapter {
 
     private static final String TAG = StickyAgendaViewAdapter.class.getSimpleName();
@@ -89,6 +91,9 @@ public class StickyAgendaViewAdapter extends SectioningAdapter {
         holder.header.setText(mDataSource.getHeaderAsDisplayText(section));
     }
 
+    /**
+     * ViewHolder for the section header.
+     */
     static final class AgendaHeaderViewHolder extends SectioningAdapter.HeaderViewHolder {
         final TextView header;
 
@@ -99,6 +104,9 @@ public class StickyAgendaViewAdapter extends SectioningAdapter {
         }
     }
 
+    /**
+     * ViewHolder for a single item.
+     */
     static final class AgendaItemViewHolder extends SectioningAdapter.ItemViewHolder {
         final TextView allDay;
         final TextView beginTime;

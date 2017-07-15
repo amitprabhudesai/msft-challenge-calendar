@@ -7,16 +7,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The data source that feeds the adapter.
+ * This maintains all the sections in the AgendaView
+ * with the events in those sections.
+ */
 public final class AgendaDataSource {
 
     private final Calendar calendar;
     private final SimpleDateFormat sectionHeaderFormatter;
     private final SimpleDateFormat eventTimeFormatter;
+
     // Maintain a list of events keyed by the day represented
-    // as time in millis since epoch
-    // This is done to be able to easily compute rank() query
-    // where we want to get count of events that occur earlier
-    // than a given time
+    // as time in millis since epoch. This is done so we can
+    // easily compute rank()/floor()/ceil() queries.
+
     // For display, we use appropriate {@link SimpleDateFormat}
     // formatters to convert from the this to the display text
     // Vis-a-vis the AgendaView, the keys represent the sections,
@@ -35,26 +40,56 @@ public final class AgendaDataSource {
         this.events = new LinkedHashMap<>();
     }
 
+    /**
+     * Clear all data.
+     */
     public void clear() {
         events.clear();
     }
 
+    /**
+     * Get the {@link Calendar} that this data source was created with.
+     * @return
+     */
     public Calendar getCalendar() {
         return calendar;
     }
 
+    /**
+     * Get the section formatter (an {@link java.text.DateFormat} instance)
+     * that this data source was created with.
+     * @return
+     */
     public SimpleDateFormat getSectionHeaderFormatter() {
         return sectionHeaderFormatter;
     }
 
+    /**
+     * Get the event time formatter (an {@link java.text.DateFormat} instance)
+     * that this data source was created with.
+     * @return
+     */
     public SimpleDateFormat getEventTimeFormatter() {
         return eventTimeFormatter;
     }
 
+    /**
+     * Add a {@link CalendarEvent}.
+     * @param time  the day the event begins, in millis since epoch
+     * @param event  the {@link CalendarEvent}. Must be non-{@code null}
+     */
     public void addEvent(long time, CalendarEvent event) {
         getEvents(time).add(event);
     }
 
+    /**
+     * Get the section corresponding to the first event that occurs
+     * no earlier than the specified time.
+     * Useful in scrolling to the correct date in the agenda when the
+     * user selects a date in the Calendar View.
+     * @param time
+     * @return
+     */
     public int getSectionCeil(long time) {
         int ceil = 0;
         boolean stop = false;
@@ -71,6 +106,14 @@ public final class AgendaDataSource {
         return ceil;
     }
 
+    /**
+     * Get the section corresponding to the last event that occurs
+     * no later than the specified time.
+     * Useful in scrolling to the correct date in the agenda when
+     * the app starts.
+     * @param time
+     * @return
+     */
     public int getSectionFloor(long time) {
         int floor = 0;
         boolean stop = false;
@@ -87,33 +130,51 @@ public final class AgendaDataSource {
         return floor;
     }
 
-    public int getNumEventsBefore(int section) {
-        int count = 0;
-        for (int i = 0; i <= section; i++) {
-            count += getEventCount(i);
-        }
-        return count;
-    }
-
+    /**
+     * Get the number of sections.
+     * @return
+     */
     public int getSectionCount() {
         return events.size();
     }
 
+    /**
+     * Get the number of events in this section
+     * @param section
+     * @return
+     */
     public int getEventCount(int section) {
         long time = getTime(section);
         if (INVALID_TIME == time) return 0;
         return events.get(time).size();
     }
 
+    /**
+     * Get the time in millis since epoch for this section
+     * @param section
+     * @return
+     */
     public long getTime(int section) {
         return section <= getSectionCount() ? fromSection(section) : INVALID_TIME;
     }
 
+    /**
+     * Format the section header for display.
+     * @param section
+     * @return
+     */
     public String getHeaderAsDisplayText(int section) {
         calendar.setTimeInMillis(getTime(section));
         return sectionHeaderFormatter.format(calendar.getTime());
     }
 
+    /**
+     * Get the {@link CalendarEvent} at the specified offset in a
+     * given section.
+     * @param section
+     * @param position
+     * @return
+     */
     public CalendarEvent getEventItem(int section, int position) {
         return events.get(getTime(section)).get(position);
     }

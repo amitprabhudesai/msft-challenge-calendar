@@ -7,9 +7,10 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 /**
- * A calendar event.
+ * A single instance of an event in the Agenda View.
  */
 public class CalendarEvent {
+
     private final long id;
     private final long calId;
     private final String title;
@@ -34,34 +35,66 @@ public class CalendarEvent {
         this.allDay = 1 == allDay;
     }
 
+    /**
+     *
+     * @return the event ID
+     */
     public final long getId() {
         return id;
     }
 
+    /**
+     *
+     * @return the ID of the calendar that this event belongs to
+     */
     public final long getCalendarId() {
         return calId;
     }
 
+    /**
+     * Get the event title.
+     * @return
+     */
     public final String getTitle() {
         return title;
     }
 
+    /**
+     * Get the event location.
+     * @return
+     */
     public final String getLocation() {
         return location;
     }
 
+    /**
+     * Get the event begin time, as millis since epoch.
+     * @return
+     */
     public final long getBeginTime() {
         return beginTime;
     }
 
+    /**
+     * Get the event end time, as millis since epoch.
+     * @return
+     */
     public final long getEndTime() {
         return endTime;
     }
 
+    /**
+     * Set the event end time as millis since epoch.
+     * @param end
+     */
     public final void setEndTime(final long end) {
         this.endTime = end;
     }
 
+    /**
+     *
+     * @return {@code true} if this is an all day event.
+     */
     public final boolean isAllDay() {
         return allDay;
     }
@@ -86,6 +119,9 @@ public class CalendarEvent {
         return result;
     }
 
+    /**
+     * Formatter to format a {@link CalendarEvent} for display.
+     */
     static final class Formatter {
         private final Calendar calendar;
         private final SimpleDateFormat formatter;

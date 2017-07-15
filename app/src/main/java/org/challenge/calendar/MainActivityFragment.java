@@ -71,23 +71,24 @@ public class MainActivityFragment extends Fragment implements
 
     private static final int PERMISSIONS_REQUEST_READ_CALENDAR = 1;
 
-    private final StickyHeaderLayoutManager.HeaderPositionChangedCallback mHeaderPositionCallback = new StickyHeaderLayoutManager.HeaderPositionChangedCallback() {
-        @Override
-        public void onHeaderPositionChanged(int section, View header,
-                                            StickyHeaderLayoutManager.HeaderPosition oldPosition,
-                                            StickyHeaderLayoutManager.HeaderPosition newPosition) {
-            if (StickyHeaderLayoutManager.HeaderPosition.STICKY == newPosition) {
-                mCalendarView.selectDate(new Date(mDataSource.getTime(section)), true);
-            }
-        }
-    };
+    private final StickyHeaderLayoutManager.HeaderPositionChangedCallback mHeaderPositionCallback =
+            new StickyHeaderLayoutManager.HeaderPositionChangedCallback() {
+                @Override
+                public void onHeaderPositionChanged(int section, View header,
+                                                    StickyHeaderLayoutManager.HeaderPosition oldPosition,
+                                                    StickyHeaderLayoutManager.HeaderPosition newPosition) {
+                    if (StickyHeaderLayoutManager.HeaderPosition.STICKY == newPosition) {
+                        mCalendarView.selectDate(new Date(mDataSource.getTime(section)), true);
+                    }
+                }
+            };
 
     private final CalendarPickerView.OnDateSelectedListener mOnDateSelectedListener = new CalendarPickerView.OnDateSelectedListener() {
         @Override
         public void onDateSelected(Date date) {
-            mRecyclerView.scrollToPosition(
-                    mStickyAdapter.getAdapterPositionForSectionHeader(
-                            mDataSource.getSectionCeil(date.getTime())));
+            mRecyclerView.scrollToPosition(mStickyAdapter
+                    .getAdapterPositionForSectionHeader(mDataSource
+                            .getSectionCeil(date.getTime())));
         }
 
         @Override
@@ -133,12 +134,13 @@ public class MainActivityFragment extends Fragment implements
         // text view to be displayed if no events found
         mTextView = (TextView) contentView.findViewById(R.id.text_view_no_events);
 
-        // agenda view
+        // agenda view - use the stickyheaders library to implement this
         mRecyclerView = (RecyclerView) contentView.findViewById(R.id.recycler_view);
         StickyHeaderLayoutManager layoutManager = new StickyHeaderLayoutManager();
         layoutManager.setHeaderPositionChangedCallback(mHeaderPositionCallback);
         mRecyclerView.setLayoutManager(layoutManager);
 
+        // recycler view does not draw an item divider by default
         DividerItemDecoration dividerItemDecoration =
                 new DividerItemDecoration(getActivity(), LinearLayoutManager.HORIZONTAL);
         mRecyclerView.addItemDecoration(dividerItemDecoration);
@@ -158,6 +160,7 @@ public class MainActivityFragment extends Fragment implements
         }
     }
 
+    // Create the data-source and adapters; also initialize the loader
     private void init() {
         mDataSource = new AgendaDataSource(Calendar.getInstance(),
                 new SimpleDateFormat("EEE, d MMM", Locale.US),
@@ -202,6 +205,8 @@ public class MainActivityFragment extends Fragment implements
                     event.setEndTime(endVal);
                 }
 
+                // compute the section header
+                // this is just the begin time with the HH:mm:ss zeroed out
                 long section = computeSectionHeader(cal, beginVal, formatter);
                 if (INVALID_TIME == section) continue;
                 mDataSource.addEvent(section, event);
@@ -213,9 +218,12 @@ public class MainActivityFragment extends Fragment implements
         mTextView.setVisibility(View.GONE);
         mStickyAdapter.setDataSource(mDataSource);
         mStickyAdapter.notifyAllSectionsDataSetChanged();
-        mRecyclerView.scrollToPosition(
-                mStickyAdapter.getAdapterPositionForSectionHeader(
-                        mDataSource.getSectionFloor(new Date().getTime())));
+        // show today's agenda
+        // to do this compute the section floor, which is the section
+        // for the last event that begins no later than the current time
+        mRecyclerView.scrollToPosition(mStickyAdapter
+                .getAdapterPositionForSectionHeader(mDataSource
+                        .getSectionFloor(new Date().getTime() /* now */)));
     }
 
     @Override
@@ -229,6 +237,7 @@ public class MainActivityFragment extends Fragment implements
             return formatter.parse(formatter.format(cal.getTime())).getTime();
         } catch (ParseException e) {
             // ignore, for now
+            Log.w(TAG, "Error computing section: " + e.getMessage());
             return INVALID_TIME;
         }
     }
