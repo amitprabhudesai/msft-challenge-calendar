@@ -7,7 +7,7 @@ Modified: July 15, 2017
 
 ### Latest build 
 You can get the latest application builds 
-[here](https://github.com/amitprabhudesai/msft-challenge-calendar/apk/) 
+[here](https://github.com/amitprabhudesai/msft-challenge-calendar/tree/master/apk) 
 to take the app for a spin. The application supports API level 16 and above.
 
 ### Building from source
@@ -35,7 +35,7 @@ export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
 
 ## New in this version
 First alpha-builds for the Calendar app. Please view the 
-[Changelog](https://github.com/amitprabhudesai/msft-challenge-calendar/ChangeLog.md) 
+[Changelog](https://github.com/amitprabhudesai/msft-challenge-calendar/blob/master/ChangeLog.md) 
 for a complete list of additions, fixes, enhancements and 
 open issues in the latest builds.
 
@@ -44,4 +44,4 @@ The source is provided under the Apache 2.0 License.
 
 ## About Me
 Hi there! Thanks for reviewing my submission. You can learn more about 
-me [here](https://github.com/amitprabhudesai/msft-challenge-calendar/AboutMe.md)
+me [here](https://github.com/amitprabhudesai/msft-challenge-calendar/blob/master/AboutMe.md)
