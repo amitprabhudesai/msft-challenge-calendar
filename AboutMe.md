@@ -12,7 +12,7 @@ metrics; and that leverage a scalable, maintainable platform that
 enables rapid innovation. 
             
 Apart from his day job, he blogs at [Medium](https://medium.com/@amitprabhudesai) 
-on topics on software engineering, life lessons that he learned (some the hard way) 
+on topics in software engineering, life lessons that he learned (some the hard way) 
 and sometimes just random stuff. He tweets 
 [@amitprabhudesai](https://twitter.com/amitprabhudesai) on stuff that he cares and is 
 passionate about. In whatever spare time he can muster while being a father to a 
