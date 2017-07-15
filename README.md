@@ -44,4 +44,4 @@ The source is provided under the Apache 2.0 License.
 
 ## About Me
 Hi there! Thanks for reviewing my submission. You can learn more about 
-me [here](https://github.com/amitprabhudesai/msft-challenge-calendar/blob/master/AboutMe.md)
+me [here](https://github.com/amitprabhudesai/msft-challenge-calendar/blob/master/AboutMe.md).
