@@ -39,6 +39,12 @@ First alpha-builds for the Calendar app. Please view the
 for a complete list of additions, fixes, enhancements and 
 open issues in the latest builds.
 
+## Open Issues
+Please see the [Issues](https://github.com/amitprabhudesai/msft-challenge-calendar/issues) 
+section for open issues. A quick summary of open issues follows:
+- Show empty sections for days where there are no events
+- Multi-day events show up only on the first day of the event
+
 ## License
 The source is provided under the Apache 2.0 License.
 
