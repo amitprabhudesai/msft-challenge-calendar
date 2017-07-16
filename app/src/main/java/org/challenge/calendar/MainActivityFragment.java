@@ -23,6 +23,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.squareup.timessquare.CalendarPickerView;
+import com.squareup.timessquare.CalendarView2;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
 
@@ -42,7 +43,7 @@ public class MainActivityFragment extends Fragment implements
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
-    private CalendarPickerView mCalendarView;
+    private CalendarView2 mCalendarView;
     private RecyclerView mRecyclerView;
     private StickyAgendaViewAdapter mStickyAdapter;
     private TextView mTextView;
@@ -126,10 +127,10 @@ public class MainActivityFragment extends Fragment implements
         nextYear.add(Calendar.YEAR, 1);
 
         mCalendarView =
-                (CalendarPickerView) contentView.findViewById(R.id.calendar_view);
+                (CalendarView2) contentView.findViewById(R.id.calendar_view);
         Date today = new Date();
         mCalendarView.init(prevYear.getTime(), nextYear.getTime()).withSelectedDate(today);
-        mCalendarView.setOnDateSelectedListener(mOnDateSelectedListener);
+//        mCalendarView.setOnDateSelectedListener(mOnDateSelectedListener);
 
         // text view to be displayed if no events found
         mTextView = (TextView) contentView.findViewById(R.id.text_view_no_events);
