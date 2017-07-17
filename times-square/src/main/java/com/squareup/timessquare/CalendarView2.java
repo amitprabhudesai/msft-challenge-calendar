@@ -38,6 +38,7 @@ import static java.util.Calendar.YEAR;
 
 public class CalendarView2 extends RecyclerView {
 
+    private static final String TAG = CalendarView2.class.getSimpleName();
     /**
      * A {@link android.support.v7.widget.RecyclerView.Adapter}
      * generalization for our calendarview widget
@@ -530,18 +531,22 @@ public class CalendarView2 extends RecyclerView {
     }
 
     private WeekCellWithWeekIndex getWeekCellWithIndexByDate(Date date) {
-        Calendar searchCal = Calendar.getInstance(timeZone, locale);
-        searchCal.setTime(date);
-        String weekKey = weekKey(searchCal);
-        Calendar actCal = Calendar.getInstance(timeZone, locale);
+        try {
+            Calendar searchCal = Calendar.getInstance(timeZone, locale);
+            searchCal.setTime(date);
+            String weekKey = weekKey(searchCal);
+            Calendar actCal = Calendar.getInstance(timeZone, locale);
 
-        int index = cells.getIndexOfKey(weekKey);
-        List<WeekCellDescriptor> weekCells = cells.get(weekKey);
-        for (WeekCellDescriptor actCell : weekCells) {
-            actCal.setTime(actCell.getDate());
-            if (sameDate(actCal, searchCal) && actCell.isSelectable()) {
-                return new WeekCellWithWeekIndex(actCell, index);
+            int index = cells.getIndexOfKey(weekKey);
+            List<WeekCellDescriptor> weekCells = cells.get(weekKey);
+            for (WeekCellDescriptor actCell : weekCells) {
+                actCal.setTime(actCell.getDate());
+                if (sameDate(actCal, searchCal) && actCell.isSelectable()) {
+                    return new WeekCellWithWeekIndex(actCell, index);
+                }
             }
+        } catch (Exception e) {
+            // ignore
         }
 
         return null;
