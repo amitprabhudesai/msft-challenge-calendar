@@ -15,7 +15,6 @@ import android.support.v4.content.Loader;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -48,6 +47,9 @@ public class MainActivityFragment extends Fragment implements
     private TextView mTextView;
 
     private AgendaDataSource mDataSource;
+
+    private final Calendar minCal;
+    private final Calendar maxCal;
 
     private static final String[] INSTANCES_PROJECTION = new String[] {
             Instances.EVENT_ID,        // 0
@@ -97,6 +99,10 @@ public class MainActivityFragment extends Fragment implements
     };
 
     public MainActivityFragment() {
+        minCal = Calendar.getInstance();
+        minCal.add(Calendar.MONTH, -1);
+        maxCal = Calendar.getInstance();
+        maxCal.add(Calendar.MONTH, 1);
     }
 
     @Override
@@ -118,17 +124,10 @@ public class MainActivityFragment extends Fragment implements
                              Bundle savedInstanceState) {
         final View contentView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        // calendar view
-        Calendar prevYear = Calendar.getInstance();
-        prevYear.add(Calendar.YEAR, -1);
-
-        Calendar nextYear = Calendar.getInstance();
-        nextYear.add(Calendar.YEAR, 1);
-
         mCalendarView =
                 (CalendarView2) contentView.findViewById(R.id.calendar_view);
         Date today = new Date();
-        mCalendarView.init(prevYear.getTime(), nextYear.getTime()).withSelectedDate(today);
+        mCalendarView.init(minCal.getTime(), maxCal.getTime()).withSelectedDate(today);
         mCalendarView.setDateSelectionChangedListener(mDateSelectionChangedListener);
 
         // text view to be displayed if no events found
@@ -174,8 +173,8 @@ public class MainActivityFragment extends Fragment implements
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         long now = new Date().getTime();
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
-        ContentUris.appendId(builder, now - DateUtils.WEEK_IN_MILLIS);
-        ContentUris.appendId(builder, now + DateUtils.WEEK_IN_MILLIS);
+        ContentUris.appendId(builder, minCal.getTimeInMillis());
+        ContentUris.appendId(builder, maxCal.getTimeInMillis());
 
         return new CursorLoader(getActivity(),
                 builder.build(), INSTANCES_PROJECTION,
