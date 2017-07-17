@@ -40,17 +40,19 @@ public class WeekView extends LinearLayout {
     }
 
     public static WeekView create(ViewGroup parent, LayoutInflater inflater,
-                                   DateFormat weekdayNameFormat, Listener listener, Calendar today,
-                                   int dayBackgroundResId, int dayTextColorResId, int titleTextColor, Locale locale, DayViewAdapter adapter) {
+                                  DateFormat weekdayNameFormat, Listener listener, Calendar today,
+                                  int dayBackgroundResId, int dayTextColorResId,
+                                  Locale locale, DayViewAdapter adapter) {
         return create(parent, inflater, weekdayNameFormat, listener, today,
-                dayBackgroundResId, dayTextColorResId, titleTextColor, null,
+                dayBackgroundResId, dayTextColorResId, null /* decorator */,
                 locale, adapter);
     }
 
     public static WeekView create(ViewGroup parent, LayoutInflater inflater,
-                                   DateFormat weekdayNameFormat, Listener listener, Calendar today,
-                                   int dayBackgroundResId, int dayTextColorResId, int titleTextColor, CalendarCellDecorator decorator, Locale locale,
-                                   DayViewAdapter adapter) {
+                                  DateFormat weekdayNameFormat, Listener listener, Calendar today,
+                                  int dayBackgroundResId, int dayTextColorResId,
+                                  CalendarCellDecorator decorator, Locale locale,
+                                  DayViewAdapter adapter) {
         final WeekView view = (WeekView) inflater.inflate(R.layout.row, parent, false);
         view.setDayViewAdapter(adapter);
         view.setDayTextColor(dayTextColorResId);
@@ -84,7 +86,7 @@ public class WeekView extends LinearLayout {
     }
 
     public void init(WeekDescriptor week, List<WeekCellDescriptor> cells,
-                     boolean displayOnly, Typeface titleTypeface, Typeface dateTypeface) {
+                     boolean displayOnly, Typeface dateTypeface) {
         Logr.d("Initializing WeekView (%d) for %s", System.identityHashCode(this), week);
         long start = System.currentTimeMillis();
         NumberFormat numberFormatter = NumberFormat.getInstance(locale);

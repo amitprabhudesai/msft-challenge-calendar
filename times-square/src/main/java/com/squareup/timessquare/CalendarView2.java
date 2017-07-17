@@ -19,7 +19,6 @@ import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -39,37 +38,118 @@ import static java.util.Calendar.YEAR;
 
 public class CalendarView2 extends RecyclerView {
 
+    /**
+     * A {@link android.support.v7.widget.RecyclerView.Adapter}
+     * generalization for our calendarview widget
+     */
     private final CalendarView2.WeekAdapter adapter;
+
+    /**
+     * Week cells indexed to allow easy date selection.
+     * Each week cell is represented by a {@link WeekCellDescriptor}.
+     * Populating this is done by the call to {@link #init(Date, Date)}
+     * or one of the other convenience methods.
+     * A single {@link WeekCellDescriptor} is inserted for every week,
+     * with the week day being a hash of the date (yyyy-MM-dd).
+     */
     private final IndexedLinkedHashMap<String, List<WeekCellDescriptor>> cells =
             new IndexedLinkedHashMap<>();
-    final List<WeekDescriptor> weeks = new ArrayList<>();
+
+    /**
+     * A collection of {@link WeekDescriptor}, one for every week in
+     * the range that this widget is initialized with (by a call to
+     * {@link #init(Date, Date)} or similar methods).
+     */
+    private final List<WeekDescriptor> weeks = new ArrayList<>();
+
+    /**
+     * Default implementation of the {@link DayViewAdapter} interface.
+     * This is used to render a single {@link CalendarCellView}.
+     */
+    private DayViewAdapter dayViewAdapter = new DefaultDayViewAdapter();
+
+    /**
+     * Get notified of date selected/unselected events.
+     */
+    private DateSelectionChangedListener dateListener;
+
+    /**
+     * Each cell will handle click events itself.
+     */
+    private WeekView.Listener listener = new CellClickedListener();
+
     WeekCellDescriptor selectedCell;
     WeekCellDescriptor highlightedCell;
     Calendar selectedCal;
     Calendar highlightedCal;
     private Locale locale;
     private TimeZone timeZone;
-    private WeekView.Listener listener = new CellClickedListener();
     private DateFormat weekdayNameFormat;
     private DateFormat fullDateFormat;
     private Calendar minCal;
     private Calendar maxCal;
+
+    // counter to keep track while adding weeks into the widget
     private Calendar weekCounter;
     private boolean displayOnly;
     Calendar today;
     private int dayBackgroundResId;
     private int dayTextColorResId;
-    private int titleTextColor;
-    private Typeface titleTypeface;
     private Typeface dateTypeface;
 
-    private DateSelectionChangedListener dateListener;
     private DateSelectableFilter dateConfiguredListener;
     private OnInvalidDateSelectedListener invalidDateListener =
             new DefaultOnInvalidDateSelectedListener();
     private CellClickInterceptor cellClickInterceptor;
     private CalendarCellDecorator decorator;
-    private DayViewAdapter dayViewAdapter = new DefaultDayViewAdapter();
+
+    /**
+     * A single cell in a week, indexed by the week key
+     */
+    private static class WeekCellWithWeekIndex {
+        public WeekCellDescriptor cell;
+        public int weekIndex;
+
+        public WeekCellWithWeekIndex(WeekCellDescriptor cell, int weekIndex) {
+            this.cell = cell;
+            this.weekIndex = weekIndex;
+        }
+    }
+
+    private final class CellClickedListener implements WeekView.Listener {
+        @Override
+        public void onCellClicked(WeekCellDescriptor cell) {
+            Date clickedDate = cell.getDate();
+            if (cellClickInterceptor != null && cellClickInterceptor.onCellClicked(clickedDate)) {
+                return;
+            }
+            if (!betweenDates(clickedDate, minCal, maxCal) || !isDateSelectable(clickedDate)) {
+                if (invalidDateListener != null) {
+                    invalidDateListener.onInvalidDateSelected(clickedDate);
+                }
+            } else {
+                boolean wasSelected = doSelectDate(clickedDate, cell);
+                if (wasSelected) {
+                    dateListener.onDateSelected(clickedDate);
+                } else {
+                    dateListener.onDateUnselected(clickedDate);
+                }
+            }
+        }
+    }
+
+    private final DateSelectionChangedListener EMPTY_DATE_SELECTION_CHANGED_LISTENER =
+            new DateSelectionChangedListener() {
+                @Override
+                public void onDateSelected(Date date) {
+
+                }
+
+                @Override
+                public void onDateUnselected(Date date) {
+
+                }
+            };
 
     public CalendarView2(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -82,8 +162,6 @@ public class CalendarView2 extends RecyclerView {
                 R.drawable.calendar_bg_selector);
         dayTextColorResId = a.getResourceId(R.styleable.CalendarPickerView_tsquare_dayTextColor,
                 R.color.calendar_text_selector);
-        titleTextColor = a.getColor(R.styleable.CalendarPickerView_tsquare_titleTextColor,
-                res.getColor(R.color.calendar_text_active));
         a.recycle();
 
         setLayoutManager(new LinearLayoutManager(context));
@@ -99,6 +177,7 @@ public class CalendarView2 extends RecyclerView {
         weekdayNameFormat.setTimeZone(timeZone);
         fullDateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, locale);
         fullDateFormat.setTimeZone(timeZone);
+        dateListener = EMPTY_DATE_SELECTION_CHANGED_LISTENER;
 
         if (isInEditMode()) {
             Calendar nextYear = Calendar.getInstance(timeZone, locale);
@@ -166,7 +245,7 @@ public class CalendarView2 extends RecyclerView {
 
         // Now iterate between minCal and maxCal and build up our list of weeks to show.
         weekCounter.setTime(minCal.getTime());
-        final int maxMonth = maxCal.get(WEEK_OF_MONTH);
+        final int maxMonth = maxCal.get(MONTH);
         final int maxYear = maxCal.get(YEAR);
         while ((weekCounter.get(MONTH) <= maxMonth // Up to, including the month.
                 || weekCounter.get(YEAR) < maxYear) // Up to the year.
@@ -282,7 +361,7 @@ public class CalendarView2 extends RecyclerView {
     }
 
     private void validateAndUpdate() {
-        if (getAdapter() == null) {
+        if (null == getAdapter()) {
             setAdapter(adapter);
         }
         adapter.notifyDataSetChanged();
@@ -302,7 +381,6 @@ public class CalendarView2 extends RecyclerView {
                 if (smoothScroll) {
                     smoothScrollToPosition(selectedIndex);
                 } else {
-                    //TODO(amit.prabhudesai) Check this out
                     ((LinearLayoutManager) getLayoutManager())
                             .scrollToPositionWithOffset(selectedIndex, 0);
                 }
@@ -351,45 +429,23 @@ public class CalendarView2 extends RecyclerView {
         return false;
     }
 
-    /**
-     * Set the typeface to be used for month titles.
-     */
-    public void setTitleTypeface(Typeface titleTypeface) {
-        this.titleTypeface = titleTypeface;
-        validateAndUpdate();
-    }
-
-    /**
-     * Sets the typeface to be used within the date grid.
-     */
     public void setDateTypeface(Typeface dateTypeface) {
         this.dateTypeface = dateTypeface;
         validateAndUpdate();
     }
 
-    /**
-     * Sets the typeface to be used for all text within this calendar.
-     */
     public void setTypeface(Typeface typeface) {
-        setTitleTypeface(typeface);
         setDateTypeface(typeface);
     }
 
     public Date getSelectedDate() {
-        //TODO(amit.prabhudesai) Check if a cal is always selected
-        return selectedCal.getTime();
+        return selectedCal != null ? selectedCal.getTime() : null;
     }
 
-    /**
-     * Returns a string summarizing what the client sent us for init() params.
-     */
     private static String dbg(Date minDate, Date maxDate) {
         return "minDate: " + minDate + "\nmaxDate: " + maxDate;
     }
 
-    /**
-     * Clears out the hours/minutes/seconds/millis of a Calendar.
-     */
     static void setMidnight(Calendar cal) {
         cal.set(HOUR_OF_DAY, 0);
         cal.set(MINUTE, 0);
@@ -397,37 +453,8 @@ public class CalendarView2 extends RecyclerView {
         cal.set(MILLISECOND, 0);
     }
 
-    private class CellClickedListener implements WeekView.Listener {
-        @Override
-        public void onCellClicked(WeekCellDescriptor cell) {
-            Date clickedDate = cell.getDate();
-            if (cellClickInterceptor != null && cellClickInterceptor.onCellClicked(clickedDate)) {
-                return;
-            }
-            if (!betweenDates(clickedDate, minCal, maxCal) || !isDateSelectable(clickedDate)) {
-                if (invalidDateListener != null) {
-                    invalidDateListener.onInvalidDateSelected(clickedDate);
-                }
-            } else {
-                boolean wasSelected = doSelectDate(clickedDate, cell);
-
-                if (dateListener != null) {
-                    if (wasSelected) {
-                        dateListener.onDateSelected(clickedDate);
-                    } else {
-                        dateListener.onDateUnselected(clickedDate);
-                    }
-                }
-            }
-        }
-    }
-
     /**
      * Select a new date.
-     * <p>
-     * If the selection was made (selectable date, in range), the view will scroll to the newly
-     * selected date if it's not already visible.
-     *
      * @return - whether we were able to set the date
      */
     public boolean selectDate(Date date) {
@@ -436,10 +463,6 @@ public class CalendarView2 extends RecyclerView {
 
     /**
      * Select a new date.
-     * <p>
-     * If the selection was made (selectable date, in range), the view will scroll to the newly
-     * selected date if it's not already visible.
-     *
      * @return - whether we were able to set the date
      */
     public boolean selectDate(Date date, boolean smoothScroll) {
@@ -451,7 +474,7 @@ public class CalendarView2 extends RecyclerView {
         }
         boolean wasSelected = doSelectDate(date, weekCellWithIndexByDate.cell);
         if (wasSelected) {
-            scrollToSelectedWeek(weekCellWithIndexByDate.monthIndex, smoothScroll);
+            scrollToSelectedWeek(weekCellWithIndexByDate.weekIndex, smoothScroll);
         }
         return wasSelected;
     }
@@ -506,22 +529,6 @@ public class CalendarView2 extends RecyclerView {
         selectedCal = null;
     }
 
-    /**
-     * Hold a cell with a week-index.
-     */
-    private static class WeekCellWithWeekIndex {
-        public WeekCellDescriptor cell;
-        public int monthIndex;
-
-        public WeekCellWithWeekIndex(WeekCellDescriptor cell, int monthIndex) {
-            this.cell = cell;
-            this.monthIndex = monthIndex;
-        }
-    }
-
-    /**
-     * Return cell and week-index (for scrolling) for a given Date.
-     */
     private WeekCellWithWeekIndex getWeekCellWithIndexByDate(Date date) {
         Calendar searchCal = Calendar.getInstance(timeZone, locale);
         searchCal.setTime(date);
@@ -540,6 +547,9 @@ public class CalendarView2 extends RecyclerView {
         return null;
     }
 
+    /**
+     * Data source supplying {@link WeekView}s for our calendar widget.
+     */
     private final class WeekAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         @Override
@@ -552,7 +562,9 @@ public class CalendarView2 extends RecyclerView {
         @Override
         public void onBindViewHolder(ViewHolder viewHolder, int position) {
             WeekViewHolder holder = (WeekViewHolder) viewHolder;
-            holder.weekView.init(weeks.get(position), cells.getValueAtIndex(position), displayOnly, titleTypeface, dateTypeface);
+            // Calling init updates the view
+            holder.weekView.init(weeks.get(position), cells.getValueAtIndex(position),
+                    displayOnly, dateTypeface);
         }
 
         @Override
@@ -566,9 +578,12 @@ public class CalendarView2 extends RecyclerView {
 
             public WeekViewHolder(View itemView, ViewGroup parent) {
                 super(itemView);
+                // inflate a WeekView programmatically
                 this.weekView = WeekView.create(parent, LayoutInflater.from(parent.getContext()),
                         weekdayNameFormat, listener, today,
-                        dayBackgroundResId, dayTextColorResId, titleTextColor, decorator, locale, dayViewAdapter);
+                        dayBackgroundResId, dayTextColorResId,
+                        decorator, locale,
+                        dayViewAdapter);
 
                 LinearLayout layout = (LinearLayout) itemView;
                 layout.addView(weekView);
@@ -615,22 +630,6 @@ public class CalendarView2 extends RecyclerView {
         return null != selectedCal && sameDate(cal, selectedCal);
     }
 
-    private static Calendar minDate(List<Calendar> selectedCals) {
-        if (selectedCals == null || selectedCals.size() == 0) {
-            return null;
-        }
-        Collections.sort(selectedCals);
-        return selectedCals.get(0);
-    }
-
-    private static Calendar maxDate(List<Calendar> selectedCals) {
-        if (selectedCals == null || selectedCals.size() == 0) {
-            return null;
-        }
-        Collections.sort(selectedCals);
-        return selectedCals.get(selectedCals.size() - 1);
-    }
-
     private static boolean sameDate(Calendar selectedDate, Calendar cal) {
         return cal.get(MONTH) == selectedDate.get(MONTH)
                 && cal.get(YEAR) == selectedDate.get(YEAR)
@@ -659,7 +658,9 @@ public class CalendarView2 extends RecyclerView {
     }
 
     public void setDateSelectionChangedListener(DateSelectionChangedListener listener) {
-        dateListener = listener;
+        if (listener != null) {
+            dateListener = listener;
+        }
     }
 
     /**
@@ -710,8 +711,16 @@ public class CalendarView2 extends RecyclerView {
      * @see #setDateSelectionChangedListener(DateSelectionChangedListener)
      */
     public interface DateSelectionChangedListener {
+        /**
+         * Called to notify that a date was selected.
+         * @param date
+         */
         void onDateSelected(Date date);
 
+        /**
+         * Called to notify that a date was unselected.
+         * @param date
+         */
         void onDateUnselected(Date date);
     }
 
@@ -754,6 +763,6 @@ public class CalendarView2 extends RecyclerView {
                             fullDateFormat.format(maxCal.getTime()));
             Toast.makeText(getContext(), errMessage, Toast.LENGTH_SHORT).show();
         }
-
     }
+
 }
