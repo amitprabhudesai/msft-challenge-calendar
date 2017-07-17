@@ -19,6 +19,13 @@ import static android.view.View.MeasureSpec.makeMeasureSpec;
 public class CalendarRowView extends ViewGroup implements View.OnClickListener {
     private boolean isHeaderRow;
     private MonthView.Listener listener;
+    /**
+     * A listener for a {@link WeekView} cell.
+     * Note: A single CalendarRowView instance will either be
+     * a part of a {@link MonthView} or a {@link WeekView} but
+     * not both.
+     */
+    private WeekView.Listener listener2;
 
     public CalendarRowView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -76,9 +83,20 @@ public class CalendarRowView extends ViewGroup implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         // Header rows don't have a click listener
+        // Also a single CalendarRowView instance is either part
+        // of a MonthView or a WeekView, but never both.
+        // Fire the correct listener, if one is set casting the
+        // view tag appropriately
         if (listener != null) {
             listener.handleClick((MonthCellDescriptor) v.getTag());
         }
+        if (listener2 != null) {
+            listener2.onCellClicked((WeekCellDescriptor) v.getTag());
+        }
+    }
+
+    public void setListener2(WeekView.Listener listener2) {
+        this.listener2 = listener2;
     }
 
     public void setListener(MonthView.Listener listener) {

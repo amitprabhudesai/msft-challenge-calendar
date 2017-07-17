@@ -15,7 +15,14 @@ import java.util.Locale;
 
 public class WeekView extends LinearLayout {
 
+    /**
+     * Listener to be notified of cell click events
+     */
     public interface Listener {
+        /**
+         * Called to notify that a cell was clicked.
+         * @param cell
+         */
         void onCellClicked(WeekCellDescriptor cell);
     }
 
@@ -82,6 +89,7 @@ public class WeekView extends LinearLayout {
         long start = System.currentTimeMillis();
         NumberFormat numberFormatter = NumberFormat.getInstance(locale);
         CalendarRowView weekRow = (CalendarRowView) getChildAt(0);
+        weekRow.setListener2(listener);
 
         for (int c = 0; c < cells.size(); c++) {
             WeekCellDescriptor cell = cells.get(isRtl ? 6 - c : c);

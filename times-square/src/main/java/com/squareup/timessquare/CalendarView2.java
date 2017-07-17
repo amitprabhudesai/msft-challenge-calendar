@@ -63,7 +63,7 @@ public class CalendarView2 extends RecyclerView {
     private Typeface titleTypeface;
     private Typeface dateTypeface;
 
-    private OnDateSelectedListener dateListener;
+    private DateSelectionChangedListener dateListener;
     private DateSelectableFilter dateConfiguredListener;
     private OnInvalidDateSelectedListener invalidDateListener =
             new DefaultOnInvalidDateSelectedListener();
@@ -400,6 +400,25 @@ public class CalendarView2 extends RecyclerView {
     private class CellClickedListener implements WeekView.Listener {
         @Override
         public void onCellClicked(WeekCellDescriptor cell) {
+            Date clickedDate = cell.getDate();
+            if (cellClickInterceptor != null && cellClickInterceptor.onCellClicked(clickedDate)) {
+                return;
+            }
+            if (!betweenDates(clickedDate, minCal, maxCal) || !isDateSelectable(clickedDate)) {
+                if (invalidDateListener != null) {
+                    invalidDateListener.onInvalidDateSelected(clickedDate);
+                }
+            } else {
+                boolean wasSelected = doSelectDate(clickedDate, cell);
+
+                if (dateListener != null) {
+                    if (wasSelected) {
+                        dateListener.onDateSelected(clickedDate);
+                    } else {
+                        dateListener.onDateUnselected(clickedDate);
+                    }
+                }
+            }
         }
     }
 
@@ -639,7 +658,7 @@ public class CalendarView2 extends RecyclerView {
         return dateConfiguredListener == null || dateConfiguredListener.isDateSelectable(date);
     }
 
-    public void setOnDateSelectedListener(OnDateSelectedListener listener) {
+    public void setDateSelectionChangedListener(DateSelectionChangedListener listener) {
         dateListener = listener;
     }
 
@@ -688,9 +707,9 @@ public class CalendarView2 extends RecyclerView {
      * when the user initiates the date selection.  If you call {@link #selectDate(Date)} this
      * listener will not be notified.
      *
-     * @see #setOnDateSelectedListener(OnDateSelectedListener)
+     * @see #setDateSelectionChangedListener(DateSelectionChangedListener)
      */
-    public interface OnDateSelectedListener {
+    public interface DateSelectionChangedListener {
         void onDateSelected(Date date);
 
         void onDateUnselected(Date date);
