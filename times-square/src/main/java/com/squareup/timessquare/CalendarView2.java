@@ -36,6 +36,18 @@ import static java.util.Calendar.SECOND;
 import static java.util.Calendar.WEEK_OF_MONTH;
 import static java.util.Calendar.YEAR;
 
+/**
+ * A calendar view widget that enables scroll through weeks
+ * of the year.
+ * Ideally, a calendar widget should display the calendar
+ * header - that displays the month and abbreviated formats
+ * for the day label. For now, however, this widget does not
+ * include the header and is just a generalization of a
+ * {@link RecyclerView}. For the calendar header, use the
+ * {@link CalendarHeaderView}.
+ *
+ * @see CalendarHeaderView
+ */
 public class CalendarView2 extends RecyclerView {
 
     private static final String TAG = CalendarView2.class.getSimpleName();

@@ -10,6 +10,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Widget to display the calendar header.
+ * Ideally, this should be part of the {@link CalendarView2} widget.
+ * But for now this is a separate widget, and will typically be
+ * used with the {@link CalendarView2}.
+ *
+ * @see CalendarView2
+ */
 public class CalendarHeaderView extends LinearLayout {
 
     private DateFormat weekdayNameFormat;
