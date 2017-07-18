@@ -164,7 +164,7 @@ public class MainActivityFragment extends Fragment implements
 
         // recycler view does not draw an item divider by default
         DividerItemDecoration dividerItemDecoration =
-                new DividerItemDecoration(getActivity(), LinearLayoutManager.HORIZONTAL);
+                new DividerItemDecoration(getActivity(), LinearLayoutManager.VERTICAL);
         mRecyclerView.addItemDecoration(dividerItemDecoration);
 
         return contentView;

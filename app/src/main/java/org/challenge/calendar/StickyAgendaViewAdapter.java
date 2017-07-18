@@ -1,5 +1,6 @@
 package org.challenge.calendar;
 
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -69,12 +70,10 @@ public class StickyAgendaViewAdapter extends SectioningAdapter {
                 new CalendarEvent.Formatter(mDataSource.getCalendar(),
                         mDataSource.getEventTimeFormatter());
         if (event.isAllDay()) {
-            holder.beginTime.setVisibility(GONE);
+            holder.beginTime.setText(R.string.text_all_day_event);
+            holder.beginTime.setTypeface(null, Typeface.NORMAL);
             holder.endTime.setVisibility(GONE);
-            holder.allDay.setText(R.string.text_all_day_event);
-            holder.allDay.setVisibility(VISIBLE);
         } else {
-            holder.allDay.setVisibility(GONE);
             holder.beginTime.setText(formatter.beginTimeAsDisplayText(event));
             holder.endTime.setText(formatter.endTimeAsDisplayText(event));
             holder.beginTime.setVisibility(VISIBLE);
@@ -108,7 +107,6 @@ public class StickyAgendaViewAdapter extends SectioningAdapter {
      * ViewHolder for a single item.
      */
     static final class AgendaItemViewHolder extends SectioningAdapter.ItemViewHolder {
-        final TextView allDay;
         final TextView beginTime;
         final TextView endTime;
         final TextView title;
@@ -117,7 +115,6 @@ public class StickyAgendaViewAdapter extends SectioningAdapter {
         public AgendaItemViewHolder(View itemView) {
             super(itemView);
 
-            this.allDay = (TextView) itemView.findViewById(R.id.text_all_day);
             this.beginTime = (TextView) itemView.findViewById(R.id.text_begin_time);
             this.endTime = (TextView) itemView.findViewById(R.id.text_end_time);
             this.title = (TextView) itemView.findViewById(R.id.text_event_title);
