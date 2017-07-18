@@ -1,6 +1,8 @@
 package org.challenge.calendar;
 
 import android.content.ContentUris;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,6 +23,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.squareup.timessquare.CalendarHeaderView;
 import com.squareup.timessquare.CalendarView2;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
@@ -41,6 +44,7 @@ public class MainActivityFragment extends Fragment implements
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
+    private CalendarHeaderView mCalendarHeaderView;
     private CalendarView2 mCalendarView;
     private RecyclerView mRecyclerView;
     private StickyAgendaViewAdapter mStickyAdapter;
@@ -80,7 +84,9 @@ public class MainActivityFragment extends Fragment implements
                                                     StickyHeaderLayoutManager.HeaderPosition oldPosition,
                                                     StickyHeaderLayoutManager.HeaderPosition newPosition) {
                     if (StickyHeaderLayoutManager.HeaderPosition.STICKY == newPosition) {
-                        mCalendarView.selectDate(new Date(mDataSource.getTime(section)), true);
+                        Date selected = new Date(mDataSource.getTime(section));
+                        mCalendarView.selectDate(selected, true);
+                        mCalendarHeaderView.handleDateSelectionChanged(selected);
                     }
                 }
             };
@@ -124,6 +130,23 @@ public class MainActivityFragment extends Fragment implements
                              Bundle savedInstanceState) {
         final View contentView = inflater.inflate(R.layout.fragment_main, container, false);
 
+        // Calendar header with month and weekday name labels
+        // styles
+        Resources res = getContext().getResources();
+        TypedArray a = getContext().obtainStyledAttributes(R.styleable.CalendarPickerView);
+        final int bg = a.getColor(R.styleable.CalendarPickerView_android_background,
+                res.getColor(R.color.calendar_bg));
+        int headerTextColor = a.getColor(R.styleable.CalendarPickerView_tsquare_headerTextColor,
+                res.getColor(R.color.calendar_text_active));
+        DateFormat weekdayNameFormat = new SimpleDateFormat(getContext().getString(R.string.day_name_format), Locale.US);
+        DateFormat monthNameFormat = new SimpleDateFormat(getContext().getString(R.string.month_name_format), Locale.US);
+        a.recycle();
+
+        // actual calendar header widget
+        mCalendarHeaderView = (CalendarHeaderView) contentView.findViewById(R.id.calendar_header);
+        mCalendarHeaderView.init(Calendar.getInstance(), weekdayNameFormat, monthNameFormat, headerTextColor, Locale.US);
+
+        // Scrollable calendar
         mCalendarView =
                 (CalendarView2) contentView.findViewById(R.id.calendar_view);
         Date today = new Date();
