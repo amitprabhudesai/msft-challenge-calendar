@@ -51,6 +51,18 @@ import static java.util.Calendar.YEAR;
 public class CalendarView2 extends RecyclerView {
 
     private static final String TAG = CalendarView2.class.getSimpleName();
+
+    /**
+     * Listener to be notified of scroll in the calendar widget.
+     */
+    public interface OnScrolledListener {
+        /**
+         * Called to signal that the calendar widget was scrolled.
+         * @param firstVisibleDate
+         */
+        void onScrolled(Date firstVisibleDate);
+    }
+
     /**
      * A {@link android.support.v7.widget.RecyclerView.Adapter}
      * generalization for our calendarview widget
@@ -113,6 +125,12 @@ public class CalendarView2 extends RecyclerView {
     private DateSelectableFilter dateConfiguredListener;
     private OnInvalidDateSelectedListener invalidDateListener =
             new DefaultOnInvalidDateSelectedListener();
+    // to detect recycler view scrolls
+    private OnCalendarScrolledListener calendarScrolledListener =
+            new OnCalendarScrolledListener();
+    // to notify clients of calendar scroll
+    private OnScrolledListener onScrolledListener =
+            new DefaultOnScrolledListener();
     private CellClickInterceptor cellClickInterceptor;
     private CalendarCellDecorator decorator;
 
@@ -151,18 +169,42 @@ public class CalendarView2 extends RecyclerView {
         }
     }
 
-    private final DateSelectionChangedListener EMPTY_DATE_SELECTION_CHANGED_LISTENER =
-            new DateSelectionChangedListener() {
-                @Override
-                public void onDateSelected(Date date) {
+    private final class DefaultDateSelectionListener implements DateSelectionChangedListener {
+        @Override
+        public void onDateSelected(Date date) {
 
-                }
+        }
 
-                @Override
-                public void onDateUnselected(Date date) {
+        @Override
+        public void onDateUnselected(Date date) {
 
-                }
-            };
+        }
+    };
+
+    private final class DefaultOnScrolledListener implements OnScrolledListener {
+        @Override
+        public void onScrolled(Date firstVisibleDate) {
+
+        }
+    }
+
+    private final class OnCalendarScrolledListener extends OnScrollListener {
+        @Override
+        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+        }
+
+        @Override
+        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+
+            int position = layoutManager.findFirstCompletelyVisibleItemPosition();
+            List<WeekCellDescriptor> week = cells.getValueAtIndex(position);
+            Date firstVisibleDate = week.get(0).getDate();
+            onScrolledListener.onScrolled(firstVisibleDate);
+        }
+    };
 
     public CalendarView2(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -178,6 +220,7 @@ public class CalendarView2 extends RecyclerView {
         a.recycle();
 
         setLayoutManager(new LinearLayoutManager(context));
+        addOnScrollListener(calendarScrolledListener);
         adapter = new WeekAdapter();
         setBackgroundColor(bg);
         timeZone = TimeZone.getDefault();
@@ -190,7 +233,7 @@ public class CalendarView2 extends RecyclerView {
         weekdayNameFormat.setTimeZone(timeZone);
         fullDateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, locale);
         fullDateFormat.setTimeZone(timeZone);
-        dateListener = EMPTY_DATE_SELECTION_CHANGED_LISTENER;
+        dateListener = new DefaultDateSelectionListener();
 
         if (isInEditMode()) {
             Calendar nextYear = Calendar.getInstance(timeZone, locale);
@@ -420,6 +463,12 @@ public class CalendarView2 extends RecyclerView {
             scrollToSelectedWeek(selectedIndex);
         } else if (todayIndex != null) {
             scrollToSelectedWeek(todayIndex);
+        }
+    }
+
+    public void setOnScrolledListener(OnScrolledListener listener) {
+        if (listener != null) {
+            onScrolledListener = listener;
         }
     }
 

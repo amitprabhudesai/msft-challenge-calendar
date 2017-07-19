@@ -117,6 +117,13 @@ public class MainActivityFragment extends Fragment implements
         }
     };
 
+    private final CalendarView2.OnScrolledListener mOnCalendarScrolledListener = new CalendarView2.OnScrolledListener() {
+        @Override
+        public void onScrolled(Date firstVisibleDate) {
+            mListener.onDateSelected(firstVisibleDate);
+        }
+    };
+
     public MainActivityFragment() {
         minCal = Calendar.getInstance();
         minCal.add(Calendar.MONTH, -1);
@@ -181,6 +188,7 @@ public class MainActivityFragment extends Fragment implements
                 (CalendarView2) contentView.findViewById(R.id.calendar_view);
         mCalendarView.init(minCal.getTime(), maxCal.getTime()).withSelectedDate(today.getTime());
         mCalendarView.setDateSelectionChangedListener(mDateSelectionChangedListener);
+        mCalendarView.setOnScrolledListener(mOnCalendarScrolledListener);
 
         // text view to be displayed if no events found
         mTextView = (TextView) contentView.findViewById(R.id.text_view_no_events);
