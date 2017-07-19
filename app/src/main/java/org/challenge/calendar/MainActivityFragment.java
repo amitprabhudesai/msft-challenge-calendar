@@ -143,8 +143,10 @@ public class MainActivityFragment extends Fragment implements
         a.recycle();
 
         // actual calendar header widget
-        mCalendarHeaderView = (CalendarHeaderView) contentView.findViewById(R.id.calendar_header);
-        mCalendarHeaderView.init(Calendar.getInstance(), weekdayNameFormat, monthNameFormat, headerTextColor, Locale.US);
+        mCalendarHeaderView =
+                (CalendarHeaderView) contentView.findViewById(R.id.calendar_header);
+        mCalendarHeaderView.init(Calendar.getInstance(),
+                weekdayNameFormat, monthNameFormat, headerTextColor, Locale.US);
 
         // Scrollable calendar
         mCalendarView =
