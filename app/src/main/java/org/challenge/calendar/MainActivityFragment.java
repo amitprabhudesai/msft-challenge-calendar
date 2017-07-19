@@ -1,6 +1,7 @@
 package org.challenge.calendar;
 
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.database.Cursor;
@@ -44,6 +45,18 @@ public class MainActivityFragment extends Fragment implements
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
+    /**
+     * Listener to notify of date selection changes.
+     */
+    public interface DateSelectionChangedListener {
+        /**
+         * Called when a date was selected
+         * @param newDate
+         */
+        void onDateSelected(Date newDate);
+    }
+
+    private DateSelectionChangedListener mListener;
     private CalendarHeaderView mCalendarHeaderView;
     private CalendarView2 mCalendarView;
     private RecyclerView mRecyclerView;
@@ -86,7 +99,7 @@ public class MainActivityFragment extends Fragment implements
                     if (StickyHeaderLayoutManager.HeaderPosition.STICKY == newPosition) {
                         Date selected = new Date(mDataSource.getTime(section));
                         mCalendarView.selectDate(selected, true);
-                        mCalendarHeaderView.handleDateSelectionChanged(selected);
+                        mListener.onDateSelected(selected);
                     }
                 }
             };
@@ -126,20 +139,35 @@ public class MainActivityFragment extends Fragment implements
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        try {
+            mListener = (DateSelectionChangedListener) context;
+        } catch (ClassCastException cce) {
+            throw new ClassCastException(context.toString()
+                    + " must implement DateSelectionChangedListener");
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View contentView = inflater.inflate(R.layout.fragment_main, container, false);
 
         // Calendar header with month and weekday name labels
         // styles
+        Calendar today = Calendar.getInstance();
+        DateFormat weekdayNameFormat =
+                new SimpleDateFormat(getContext().getString(R.string.day_name_format),
+                        Locale.US);
+        DateFormat monthNameFormat =
+                new SimpleDateFormat(getContext().getString(R.string.month_name_format),
+                        Locale.US);
         Resources res = getContext().getResources();
         TypedArray a = getContext().obtainStyledAttributes(R.styleable.CalendarPickerView);
-        final int bg = a.getColor(R.styleable.CalendarPickerView_android_background,
-                res.getColor(R.color.calendar_bg));
         int headerTextColor = a.getColor(R.styleable.CalendarPickerView_tsquare_headerTextColor,
                 res.getColor(R.color.calendar_text_active));
-        DateFormat weekdayNameFormat = new SimpleDateFormat(getContext().getString(R.string.day_name_format), Locale.US);
-        DateFormat monthNameFormat = new SimpleDateFormat(getContext().getString(R.string.month_name_format), Locale.US);
         a.recycle();
 
         // actual calendar header widget
@@ -151,8 +179,7 @@ public class MainActivityFragment extends Fragment implements
         // Scrollable calendar
         mCalendarView =
                 (CalendarView2) contentView.findViewById(R.id.calendar_view);
-        Date today = new Date();
-        mCalendarView.init(minCal.getTime(), maxCal.getTime()).withSelectedDate(today);
+        mCalendarView.init(minCal.getTime(), maxCal.getTime()).withSelectedDate(today.getTime());
         mCalendarView.setDateSelectionChangedListener(mDateSelectionChangedListener);
 
         // text view to be displayed if no events found
@@ -175,6 +202,9 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        Calendar today = Calendar.getInstance();
+        mListener.onDateSelected(today.getTime());
 
         // only initialize the loader if the app has permissions
         if (PERMISSION_GRANTED != ContextCompat.checkSelfPermission(getActivity(), READ_CALENDAR)) {

@@ -5,9 +5,16 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 
-public class MainActivity extends AppCompatActivity {
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+public class MainActivity extends AppCompatActivity implements
+        MainActivityFragment.DateSelectionChangedListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,4 +33,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onDateSelected(Date newDate) {
+        DateFormat monthNameFormat =
+                new SimpleDateFormat(getString(R.string.month_name_format), Locale.US);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(monthNameFormat.format(newDate));
+        } else {
+            Log.e("DEBUG", "No Action bar");
+        }
+    }
 }
