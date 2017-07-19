@@ -255,8 +255,8 @@ public class MainActivityFragment extends Fragment implements
         final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         try {
             while (data.moveToNext()) {
-                long id = data.getLong(PROJECTION_EVENT_ID_INDEX);
-                long calId = data.getLong(PROJECTION_CALENDAR_ID_INDEX);
+                int id = data.getInt(PROJECTION_EVENT_ID_INDEX);
+                int calId = data.getInt(PROJECTION_CALENDAR_ID_INDEX);
                 String title = data.getString(PROJECTION_TITLE_INDEX);
                 String location = data.getString(PROJECTION_EVENT_LOCATION_INDEX);
                 int allDay = data.getInt(PROJECTION_ALL_DAY_INDEX);
