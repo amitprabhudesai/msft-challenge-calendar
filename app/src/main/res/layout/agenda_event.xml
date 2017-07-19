@@ -5,7 +5,7 @@
 
         <TextView
             android:id="@+id/text_begin_time"
-            android:layout_width="wrap_content"
+            android:layout_width="@dimen/agenda_view_event_time_cell_width"
             android:layout_height="wrap_content"
             android:textColor="@color/colorPrimaryCalendarEvent"
             android:textSize="14sp"
@@ -42,6 +42,8 @@
             android:layout_marginLeft="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginBottom="4dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginEnd="2dp"
             android:paddingRight="8dp"
             android:paddingEnd="8dp"
             android:paddingLeft="8dp"
@@ -55,7 +57,7 @@
         <TextView
             android:id="@+id/text_end_time"
             android:layout_below="@id/text_begin_time"
-            android:layout_width="wrap_content"
+            android:layout_width="@dimen/agenda_view_event_time_cell_width"
             android:layout_height="wrap_content"
             android:textColor="@color/colorSecondaryCalendarEvent"
             android:textSize="14sp"
@@ -79,6 +81,8 @@
             android:layout_marginLeft="32dp"
             android:layout_marginStart="32dp"
             android:layout_marginBottom="2dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginEnd="2dp"
             android:paddingRight="8dp"
             android:paddingEnd="8dp"
             android:paddingLeft="8dp"

@@ -227,7 +227,7 @@ public class MainActivityFragment extends Fragment implements
         mDataSource = new AgendaDataSource(Calendar.getInstance(),
                 new SimpleDateFormat("EEE, d MMM", Locale.US),
                 new SimpleDateFormat("HH:mm", Locale.US));
-        mStickyAdapter = new StickyAgendaViewAdapter();
+        mStickyAdapter = new StickyAgendaViewAdapter(getActivity());
         mRecyclerView.setAdapter(mStickyAdapter);
         getLoaderManager().initLoader(0, null, this);
     }
