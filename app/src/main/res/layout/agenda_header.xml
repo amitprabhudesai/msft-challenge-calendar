@@ -2,13 +2,22 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="32dp">
+    android:layout_height="wrap_content"
+    android:background="@color/colorAgendaSectionBackground">
 
     <TextView
         android:id="@+id/text_day_header"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/calendar_active_month_bg"
+        android:background="@color/colorAgendaSectionBackground"
         android:textStyle="bold"
-        android:textSize="24sp"/>
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginStart="4dp"
+        android:paddingLeft="4dp"
+        android:paddingStart="4dp"
+        android:paddingRight="4dp"
+        android:paddingEnd="4dp"
+        android:textSize="16sp"/>
 </LinearLayout>

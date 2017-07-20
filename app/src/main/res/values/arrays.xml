@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="calendar_id_colors">
+        <item>@color/colorCalendarId0</item>
+        <item>@color/colorCalendarId1</item>
+        <item>@color/colorCalendarId2</item>
+        <item>@color/colorCalendarId3</item>
+        <item>@color/colorCalendarId4</item>
+    </array>
+</resources>

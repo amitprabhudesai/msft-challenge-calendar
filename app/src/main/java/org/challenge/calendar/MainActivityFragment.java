@@ -1,6 +1,7 @@
 package org.challenge.calendar;
 
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.database.Cursor;
@@ -24,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.squareup.timessquare.CalendarHeaderView;
+import com.squareup.timessquare.CalendarUtils;
 import com.squareup.timessquare.CalendarView2;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
@@ -37,15 +39,27 @@ import java.util.Locale;
 
 import static android.Manifest.permission.READ_CALENDAR;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static android.provider.CalendarContract.Events.DTSTART;
 import static org.challenge.calendar.AgendaDataSource.INVALID_TIME;
 
 public class MainActivityFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor>,
-        ActivityCompat.OnRequestPermissionsResultCallback,
-        MainActivity.CalendarIntentResultListener {
+        ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
+    /**
+     * Listener to notify of date selection changes.
+     */
+    public interface DateSelectionChangedListener {
+        /**
+         * Called when a date was selected
+         * @param newDate
+         */
+        void onDateSelected(Date newDate);
+    }
+
+    private DateSelectionChangedListener mListener;
     private CalendarHeaderView mCalendarHeaderView;
     private CalendarView2 mCalendarView;
     private RecyclerView mRecyclerView;
@@ -89,7 +103,7 @@ public class MainActivityFragment extends Fragment implements
                     if (StickyHeaderLayoutManager.HeaderPosition.STICKY == newPosition) {
                         Date selected = new Date(mDataSource.getTime(section));
                         mCalendarView.selectDate(selected, true);
-                        mCalendarHeaderView.handleDateSelectionChanged(selected);
+                        mListener.onDateSelected(selected);
                     }
                 }
             };
@@ -107,11 +121,20 @@ public class MainActivityFragment extends Fragment implements
         }
     };
 
+    private final CalendarView2.OnScrolledListener mOnCalendarScrolledListener = new CalendarView2.OnScrolledListener() {
+        @Override
+        public void onScrolled(Date firstVisibleDate) {
+            mListener.onDateSelected(firstVisibleDate);
+        }
+    };
+
     public MainActivityFragment() {
         minCal = Calendar.getInstance();
         minCal.add(Calendar.MONTH, -1);
+        CalendarUtils.setMidnight(minCal);
         maxCal = Calendar.getInstance();
         maxCal.add(Calendar.MONTH, 1);
+        CalendarUtils.setMidnight(maxCal);
     }
 
     @Override
@@ -128,9 +151,15 @@ public class MainActivityFragment extends Fragment implements
         }
     }
 
-    @Override
-    public void onRequestCompleted() {
-        refresh();
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        try {
+            mListener = (DateSelectionChangedListener) context;
+        } catch (ClassCastException cce) {
+            throw new ClassCastException(context.toString()
+                    + " must implement DateSelectionChangedListener");
+        }
     }
 
     @Override
@@ -140,26 +169,31 @@ public class MainActivityFragment extends Fragment implements
 
         // Calendar header with month and weekday name labels
         // styles
+        Calendar today = Calendar.getInstance();
+        DateFormat weekdayNameFormat =
+                new SimpleDateFormat(getContext().getString(R.string.day_name_format),
+                        Locale.US);
+        DateFormat monthNameFormat =
+                new SimpleDateFormat(getContext().getString(R.string.month_name_format),
+                        Locale.US);
         Resources res = getContext().getResources();
         TypedArray a = getContext().obtainStyledAttributes(R.styleable.CalendarPickerView);
-        final int bg = a.getColor(R.styleable.CalendarPickerView_android_background,
-                res.getColor(R.color.calendar_bg));
         int headerTextColor = a.getColor(R.styleable.CalendarPickerView_tsquare_headerTextColor,
                 res.getColor(R.color.calendar_text_active));
-        DateFormat weekdayNameFormat = new SimpleDateFormat(getContext().getString(R.string.day_name_format), Locale.US);
-        DateFormat monthNameFormat = new SimpleDateFormat(getContext().getString(R.string.month_name_format), Locale.US);
         a.recycle();
 
         // actual calendar header widget
-        mCalendarHeaderView = (CalendarHeaderView) contentView.findViewById(R.id.calendar_header);
-        mCalendarHeaderView.init(Calendar.getInstance(), weekdayNameFormat, monthNameFormat, headerTextColor, Locale.US);
+        mCalendarHeaderView =
+                (CalendarHeaderView) contentView.findViewById(R.id.calendar_header);
+        mCalendarHeaderView.init(Calendar.getInstance(),
+                weekdayNameFormat, monthNameFormat, headerTextColor, Locale.US);
 
         // Scrollable calendar
         mCalendarView =
                 (CalendarView2) contentView.findViewById(R.id.calendar_view);
-        Date today = new Date();
-        mCalendarView.init(minCal.getTime(), maxCal.getTime()).withSelectedDate(today);
+        mCalendarView.init(minCal.getTime(), maxCal.getTime()).withSelectedDate(today.getTime());
         mCalendarView.setDateSelectionChangedListener(mDateSelectionChangedListener);
+        mCalendarView.setOnScrolledListener(mOnCalendarScrolledListener);
 
         // text view to be displayed if no events found
         mTextView = (TextView) contentView.findViewById(R.id.text_view_no_events);
@@ -172,7 +206,7 @@ public class MainActivityFragment extends Fragment implements
 
         // recycler view does not draw an item divider by default
         DividerItemDecoration dividerItemDecoration =
-                new DividerItemDecoration(getActivity(), LinearLayoutManager.HORIZONTAL);
+                new DividerItemDecoration(getActivity(), LinearLayoutManager.VERTICAL);
         mRecyclerView.addItemDecoration(dividerItemDecoration);
 
         return contentView;
@@ -181,6 +215,9 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        Calendar today = Calendar.getInstance();
+        mListener.onDateSelected(today.getTime());
 
         // only initialize the loader if the app has permissions
         if (PERMISSION_GRANTED != ContextCompat.checkSelfPermission(getActivity(), READ_CALENDAR)) {
@@ -195,12 +232,12 @@ public class MainActivityFragment extends Fragment implements
         mDataSource = new AgendaDataSource(Calendar.getInstance(),
                 new SimpleDateFormat("EEE, d MMM", Locale.US),
                 new SimpleDateFormat("HH:mm", Locale.US));
-        mStickyAdapter = new StickyAgendaViewAdapter();
+        mStickyAdapter = new StickyAgendaViewAdapter(getActivity());
         mRecyclerView.setAdapter(mStickyAdapter);
         getLoaderManager().initLoader(ID_LOADER_CALENDAR_EVENTS, null, this);
     }
 
-    private void refresh() {
+    public void refresh() {
         // NOTE *Always* clear the existing data before a reload to prevent
         // duplicate events
         mDataSource.clear();
@@ -212,10 +249,20 @@ public class MainActivityFragment extends Fragment implements
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
         ContentUris.appendId(builder, minCal.getTimeInMillis());
         ContentUris.appendId(builder, maxCal.getTimeInMillis());
+        // For some reason setting the date range in the content URIs
+        // does not work reliably and returns some events outside this
+        // range. Use the selection clause to fix this and get events
+        // in the correct range. Not doing so induces a crash while
+        // scrolling the agenda view to this date (outside the range)
+        // upon setting the date selection in the {@link CalendarView2}
+        // due to an IllegalArgumentException thrown by the
+        // {@link CalendarView2#validateDate(Date) method
+        String selection = "(( " + DTSTART + " >= " + minCal.getTimeInMillis() +
+                " ) AND ( " + DTSTART + " <= " + maxCal.getTimeInMillis() + " ))";
 
         return new CursorLoader(getActivity(),
                 builder.build(), INSTANCES_PROJECTION,
-                null, null, // select all
+                selection, null, // select in range
                 INSTANCES_SORT_ORDER);
     }
 
@@ -229,8 +276,8 @@ public class MainActivityFragment extends Fragment implements
         final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         try {
             while (data.moveToNext()) {
-                long id = data.getLong(PROJECTION_EVENT_ID_INDEX);
-                long calId = data.getLong(PROJECTION_CALENDAR_ID_INDEX);
+                int id = data.getInt(PROJECTION_EVENT_ID_INDEX);
+                int calId = data.getInt(PROJECTION_CALENDAR_ID_INDEX);
                 String title = data.getString(PROJECTION_TITLE_INDEX);
                 String location = data.getString(PROJECTION_EVENT_LOCATION_INDEX);
                 int allDay = data.getInt(PROJECTION_ALL_DAY_INDEX);

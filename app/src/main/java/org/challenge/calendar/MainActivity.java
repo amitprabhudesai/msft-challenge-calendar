@@ -8,32 +8,24 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
-public class MainActivity extends AppCompatActivity {
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+public class MainActivity extends AppCompatActivity implements
+        MainActivityFragment.DateSelectionChangedListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    /**
-     * Listener to notify the result of using an intent to insert
-     * a new calendar event
-     */
-    public interface CalendarIntentResultListener {
-        /**
-         * Called to signal that the request was completed.
-         * <p><strong>Note</strong> The calendar app always returns
-         * with a RESULT_CANCELED in the Activity result callback, so
-         * this method is called without checking the result code.
-         * Implementations would typically force a reload for the CursorLoader.
-         */
-        void onRequestCompleted();
-    }
+    private MainActivityFragment mMainActivityFragment;
 
-    private CalendarIntentResultListener mListener;
     private final static int REQUEST_ADD_CALENDAR_EVENT = 1;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (REQUEST_ADD_CALENDAR_EVENT == requestCode) {
-            mListener.onRequestCompleted();
+            mMainActivityFragment.refresh();
         }
     }
 
@@ -43,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        mListener = (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
+        mMainActivityFragment = (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -57,4 +49,12 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onDateSelected(Date newDate) {
+        DateFormat monthNameFormat =
+                new SimpleDateFormat(getString(R.string.month_name_format), Locale.US);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(monthNameFormat.format(newDate));
+        }
+    }
 }

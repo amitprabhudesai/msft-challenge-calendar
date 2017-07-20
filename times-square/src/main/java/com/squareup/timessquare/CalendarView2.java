@@ -28,11 +28,8 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static java.util.Calendar.DATE;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
-import static java.util.Calendar.HOUR_OF_DAY;
-import static java.util.Calendar.MILLISECOND;
 import static java.util.Calendar.MINUTE;
 import static java.util.Calendar.MONTH;
-import static java.util.Calendar.SECOND;
 import static java.util.Calendar.WEEK_OF_MONTH;
 import static java.util.Calendar.YEAR;
 
@@ -51,6 +48,18 @@ import static java.util.Calendar.YEAR;
 public class CalendarView2 extends RecyclerView {
 
     private static final String TAG = CalendarView2.class.getSimpleName();
+
+    /**
+     * Listener to be notified of scroll in the calendar widget.
+     */
+    public interface OnScrolledListener {
+        /**
+         * Called to signal that the calendar widget was scrolled.
+         * @param firstVisibleDate
+         */
+        void onScrolled(Date firstVisibleDate);
+    }
+
     /**
      * A {@link android.support.v7.widget.RecyclerView.Adapter}
      * generalization for our calendarview widget
@@ -113,6 +122,12 @@ public class CalendarView2 extends RecyclerView {
     private DateSelectableFilter dateConfiguredListener;
     private OnInvalidDateSelectedListener invalidDateListener =
             new DefaultOnInvalidDateSelectedListener();
+    // to detect recycler view scrolls
+    private OnCalendarScrolledListener calendarScrolledListener =
+            new OnCalendarScrolledListener();
+    // to notify clients of calendar scroll
+    private OnScrolledListener onScrolledListener =
+            new DefaultOnScrolledListener();
     private CellClickInterceptor cellClickInterceptor;
     private CalendarCellDecorator decorator;
 
@@ -151,18 +166,42 @@ public class CalendarView2 extends RecyclerView {
         }
     }
 
-    private final DateSelectionChangedListener EMPTY_DATE_SELECTION_CHANGED_LISTENER =
-            new DateSelectionChangedListener() {
-                @Override
-                public void onDateSelected(Date date) {
+    private final class DefaultDateSelectionListener implements DateSelectionChangedListener {
+        @Override
+        public void onDateSelected(Date date) {
 
-                }
+        }
 
-                @Override
-                public void onDateUnselected(Date date) {
+        @Override
+        public void onDateUnselected(Date date) {
 
-                }
-            };
+        }
+    };
+
+    private final class DefaultOnScrolledListener implements OnScrolledListener {
+        @Override
+        public void onScrolled(Date firstVisibleDate) {
+
+        }
+    }
+
+    private final class OnCalendarScrolledListener extends OnScrollListener {
+        @Override
+        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+        }
+
+        @Override
+        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+
+            int position = layoutManager.findFirstCompletelyVisibleItemPosition();
+            List<WeekCellDescriptor> week = cells.getValueAtIndex(position);
+            Date firstVisibleDate = week.get(0).getDate();
+            onScrolledListener.onScrolled(firstVisibleDate);
+        }
+    };
 
     public CalendarView2(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -178,6 +217,7 @@ public class CalendarView2 extends RecyclerView {
         a.recycle();
 
         setLayoutManager(new LinearLayoutManager(context));
+        addOnScrollListener(calendarScrolledListener);
         adapter = new WeekAdapter();
         setBackgroundColor(bg);
         timeZone = TimeZone.getDefault();
@@ -190,7 +230,7 @@ public class CalendarView2 extends RecyclerView {
         weekdayNameFormat.setTimeZone(timeZone);
         fullDateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, locale);
         fullDateFormat.setTimeZone(timeZone);
-        dateListener = EMPTY_DATE_SELECTION_CHANGED_LISTENER;
+        dateListener = new DefaultDateSelectionListener();
 
         if (isInEditMode()) {
             Calendar nextYear = Calendar.getInstance(timeZone, locale);
@@ -247,8 +287,8 @@ public class CalendarView2 extends RecyclerView {
         weeks.clear();
         minCal.setTime(minDate);
         maxCal.setTime(maxDate);
-        setMidnight(minCal);
-        setMidnight(maxCal);
+        CalendarUtils.setMidnight(minCal);
+        CalendarUtils.setMidnight(maxCal);
         displayOnly = false;
 
         // maxDate is exclusive: bump back to the previous day
@@ -258,11 +298,11 @@ public class CalendarView2 extends RecyclerView {
 
         // Now iterate between minCal and maxCal and build up our list of weeks to show.
         weekCounter.setTime(minCal.getTime());
+        final int maxWeek = maxCal.get(WEEK_OF_MONTH);
         final int maxMonth = maxCal.get(MONTH);
-        final int maxYear = maxCal.get(YEAR);
-        while ((weekCounter.get(MONTH) <= maxMonth // Up to, including the month.
-                || weekCounter.get(YEAR) < maxYear) // Up to the year.
-                && weekCounter.get(YEAR) < maxYear + 1) { // But not > next yr.
+        while ((weekCounter.get(WEEK_OF_MONTH) <= maxWeek // Up to, including the week.
+                || weekCounter.get(MONTH) < maxMonth) // Up to the month.
+                && weekCounter.get(MONTH) < maxMonth + 1) { // But not > next month.
             Date date = weekCounter.getTime();
             WeekDescriptor week =
                     new WeekDescriptor(weekCounter.get(WEEK_OF_MONTH),
@@ -423,6 +463,12 @@ public class CalendarView2 extends RecyclerView {
         }
     }
 
+    public void setOnScrolledListener(OnScrolledListener listener) {
+        if (listener != null) {
+            onScrolledListener = listener;
+        }
+    }
+
     public boolean scrollToDate(Date date) {
         Integer selectedIndex = null;
 
@@ -457,13 +503,6 @@ public class CalendarView2 extends RecyclerView {
 
     private static String dbg(Date minDate, Date maxDate) {
         return "minDate: " + minDate + "\nmaxDate: " + maxDate;
-    }
-
-    static void setMidnight(Calendar cal) {
-        cal.set(HOUR_OF_DAY, 0);
-        cal.set(MINUTE, 0);
-        cal.set(SECOND, 0);
-        cal.set(MILLISECOND, 0);
     }
 
     /**
@@ -508,7 +547,7 @@ public class CalendarView2 extends RecyclerView {
         Calendar newlySelectedCal = Calendar.getInstance(timeZone, locale);
         newlySelectedCal.setTime(date);
         // Sanitize input: clear out the hours/minutes/seconds/millis.
-        setMidnight(newlySelectedCal);
+        CalendarUtils.setMidnight(newlySelectedCal);
 
         clearOldSelections();
 
