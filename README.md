@@ -34,7 +34,7 @@ export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
 ```
 
 ## New in this version
-First alpha-builds for the Calendar app. Please view the 
+First release-candidate build for the Calendar app. Please view the 
 [Changelog](https://github.com/amitprabhudesai/msft-challenge-calendar/blob/master/ChangeLog.md) 
 for a complete list of additions, fixes, enhancements and 
 open issues in the latest builds.
