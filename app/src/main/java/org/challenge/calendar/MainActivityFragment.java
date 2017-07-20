@@ -40,7 +40,9 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static org.challenge.calendar.AgendaDataSource.INVALID_TIME;
 
 public class MainActivityFragment extends Fragment implements
-        LoaderManager.LoaderCallbacks<Cursor>, ActivityCompat.OnRequestPermissionsResultCallback {
+        LoaderManager.LoaderCallbacks<Cursor>,
+        ActivityCompat.OnRequestPermissionsResultCallback,
+        MainActivity.CalendarIntentResultListener {
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
@@ -76,6 +78,7 @@ public class MainActivityFragment extends Fragment implements
     private static final int PROJECTION_END_INDEX            = 6;
 
     private static final int PERMISSIONS_REQUEST_READ_CALENDAR = 1;
+    private static final int ID_LOADER_CALENDAR_EVENTS = 0;
 
     private final StickyHeaderLayoutManager.HeaderPositionChangedCallback mHeaderPositionCallback =
             new StickyHeaderLayoutManager.HeaderPositionChangedCallback() {
@@ -123,6 +126,11 @@ public class MainActivityFragment extends Fragment implements
                 }
                 break;
         }
+    }
+
+    @Override
+    public void onRequestCompleted() {
+        refresh();
     }
 
     @Override
@@ -189,12 +197,18 @@ public class MainActivityFragment extends Fragment implements
                 new SimpleDateFormat("HH:mm", Locale.US));
         mStickyAdapter = new StickyAgendaViewAdapter();
         mRecyclerView.setAdapter(mStickyAdapter);
-        getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(ID_LOADER_CALENDAR_EVENTS, null, this);
+    }
+
+    private void refresh() {
+        // NOTE *Always* clear the existing data before a reload to prevent
+        // duplicate events
+        mDataSource.clear();
+        getLoaderManager().getLoader(ID_LOADER_CALENDAR_EVENTS).forceLoad();
     }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        long now = new Date().getTime();
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
         ContentUris.appendId(builder, minCal.getTimeInMillis());
         ContentUris.appendId(builder, maxCal.getTimeInMillis());
