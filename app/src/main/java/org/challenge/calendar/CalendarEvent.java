@@ -11,8 +11,8 @@ import java.util.Calendar;
  */
 public class CalendarEvent {
 
-    private final long id;
-    private final long calId;
+    private final int id;
+    private final int calId;
     private final String title;
     private final String location;
     private final boolean allDay;
@@ -21,8 +21,8 @@ public class CalendarEvent {
     private final long beginTime;
     private long endTime;
 
-    public CalendarEvent(final long id,
-                         final long calId,
+    public CalendarEvent(final int id,
+                         final int calId,
                          final String title,
                          final long beginTime,
                          final String location,
@@ -39,7 +39,7 @@ public class CalendarEvent {
      *
      * @return the event ID
      */
-    public final long getId() {
+    public final int getId() {
         return id;
     }
 
@@ -47,7 +47,7 @@ public class CalendarEvent {
      *
      * @return the ID of the calendar that this event belongs to
      */
-    public final long getCalendarId() {
+    public final int getCalendarId() {
         return calId;
     }
 

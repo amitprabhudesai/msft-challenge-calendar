@@ -4,6 +4,7 @@
     <style name="CalendarTitle">
         <item name="android:textSize">@dimen/calendar_text_medium</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#ffffff</item>
     </style>
 
     <style name="CalendarCell">
@@ -19,6 +20,6 @@
 
     <style name="CalendarCell.CalendarDate">
         <item name="android:textSize">@dimen/calendar_text_medium</item>
-        <item name="android:textStyle">bold</item>
+        <item name="android:textStyle">normal</item>
     </style>
 </resources>

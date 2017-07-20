@@ -7,7 +7,6 @@ import android.widget.TextView;
 
 import java.text.DateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -28,10 +27,7 @@ public class CalendarHeaderView extends LinearLayout {
         this.weekdayNameFormat = weekdayNameFormat;
         this.monthNameFormat = monthNameFormat;
 
-        final TextView monthLabel = (TextView) getChildAt(0);
-        monthLabel.setText(monthNameFormat.format(today.getTime()));
-
-        final CalendarRowView headerRow = (CalendarRowView) getChildAt(1);
+        final CalendarRowView headerRow = (CalendarRowView) getChildAt(0);
         final int originalDayOfWeek = today.get(Calendar.DAY_OF_WEEK);
         int firstDayOfWeek = today.getFirstDayOfWeek();
 
@@ -46,11 +42,6 @@ public class CalendarHeaderView extends LinearLayout {
 
     public CalendarHeaderView(Context context, AttributeSet attrs) {
         super(context, attrs);
-    }
-
-    public void handleDateSelectionChanged(Date newDate) {
-        final TextView monthLabel = (TextView) getChildAt(0);
-        monthLabel.setText(monthNameFormat.format(newDate));
     }
 
     private int getDayOfWeek(int firstDayOfWeek, int offset, boolean isRtl) {
