@@ -41,11 +41,11 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.provider.CalendarContract.Events.DTSTART;
 import static org.challenge.calendar.AgendaDataSource.INVALID_TIME;
 
-public class MainActivityFragment extends Fragment implements
+public class CalendarFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor>,
         ActivityCompat.OnRequestPermissionsResultCallback {
 
-    private static final String TAG = MainActivityFragment.class.getSimpleName();
+    private static final String TAG = CalendarFragment.class.getSimpleName();
 
     /**
      * Listener to notify of date selection changes.
@@ -127,7 +127,7 @@ public class MainActivityFragment extends Fragment implements
         }
     };
 
-    public MainActivityFragment() {
+    public CalendarFragment() {
         minCal = Calendar.getInstance();
         minCal.add(Calendar.MONTH, -1);
         CalendarUtils.setMidnight(minCal);

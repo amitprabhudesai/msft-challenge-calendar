@@ -13,10 +13,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements
-        MainActivityFragment.DateSelectionChangedListener {
+public class CalendarActivity extends AppCompatActivity implements
+        CalendarFragment.DateSelectionChangedListener {
 
-    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String TAG = CalendarActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
