@@ -1,11 +1,11 @@
 package org.challenge.calendar;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 
 import java.text.DateFormat;
@@ -15,6 +15,8 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements
         MainActivityFragment.DateSelectionChangedListener {
+
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,8 +29,10 @@ public class MainActivity extends AppCompatActivity implements
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                // Use an intent to insert a new event
+                // This way we don't need to hold (or check) the WRITE_CALENDAR permission
+                Intent intent = new Intent(Intent.ACTION_INSERT).setData(CalendarContract.Events.CONTENT_URI);
+                startActivity(intent);
             }
         });
     }
@@ -39,8 +43,6 @@ public class MainActivity extends AppCompatActivity implements
                 new SimpleDateFormat(getString(R.string.month_name_format), Locale.US);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(monthNameFormat.format(newDate));
-        } else {
-            Log.e("DEBUG", "No Action bar");
         }
     }
 }

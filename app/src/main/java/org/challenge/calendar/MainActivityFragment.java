@@ -7,14 +7,12 @@ import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.CalendarContract;
 import android.provider.CalendarContract.Instances;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -40,11 +38,12 @@ import java.util.Locale;
 
 import static android.Manifest.permission.READ_CALENDAR;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.provider.CalendarContract.Events.*;
+import static android.provider.CalendarContract.Events.DTSTART;
 import static org.challenge.calendar.AgendaDataSource.INVALID_TIME;
 
 public class MainActivityFragment extends Fragment implements
-        LoaderManager.LoaderCallbacks<Cursor>, ActivityCompat.OnRequestPermissionsResultCallback {
+        LoaderManager.LoaderCallbacks<Cursor>,
+        ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final String TAG = MainActivityFragment.class.getSimpleName();
 
@@ -92,6 +91,7 @@ public class MainActivityFragment extends Fragment implements
     private static final int PROJECTION_END_INDEX            = 6;
 
     private static final int PERMISSIONS_REQUEST_READ_CALENDAR = 1;
+    private static final int ID_LOADER_CALENDAR_EVENTS = 0;
 
     private final StickyHeaderLayoutManager.HeaderPositionChangedCallback mHeaderPositionCallback =
             new StickyHeaderLayoutManager.HeaderPositionChangedCallback() {
@@ -150,7 +150,6 @@ public class MainActivityFragment extends Fragment implements
         }
     }
 
-    @Override
     public void onAttach(Context context) {
         super.onAttach(context);
 
@@ -229,12 +228,16 @@ public class MainActivityFragment extends Fragment implements
 
     // Create the data-source and adapters; also initialize the loader
     private void init() {
-        mDataSource = new AgendaDataSource(Calendar.getInstance(),
-                new SimpleDateFormat("EEE, d MMM", Locale.US),
-                new SimpleDateFormat("HH:mm", Locale.US));
         mStickyAdapter = new StickyAgendaViewAdapter(getActivity());
         mRecyclerView.setAdapter(mStickyAdapter);
-        getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(ID_LOADER_CALENDAR_EVENTS, null, this);
+    }
+
+    public void refresh() {
+        // NOTE *Always* clear the existing data before a reload to prevent
+        // duplicate events
+        mDataSource.clear();
+        getLoaderManager().getLoader(ID_LOADER_CALENDAR_EVENTS).forceLoad();
     }
 
     @Override
@@ -253,7 +256,7 @@ public class MainActivityFragment extends Fragment implements
         String selection = "(( " + DTSTART + " >= " + minCal.getTimeInMillis() +
                 " ) AND ( " + DTSTART + " <= " + maxCal.getTimeInMillis() + " ))";
 
-        return new CursorLoader(getActivity(),
+        return new CalendarCursorLoader(getActivity(),
                 builder.build(), INSTANCES_PROJECTION,
                 selection, null, // select in range
                 INSTANCES_SORT_ORDER);
@@ -264,6 +267,13 @@ public class MainActivityFragment extends Fragment implements
         if (null == data || data.getCount() <= 0) {
             return;
         }
+
+        // create a new instance every time we are notified
+        // to prevent duplicate events or having to clear the
+        // older data
+        mDataSource = new AgendaDataSource(Calendar.getInstance(),
+                new SimpleDateFormat("EEE, d MMM", Locale.US),
+                new SimpleDateFormat("HH:mm", Locale.US));
 
         final Calendar cal = Calendar.getInstance();
         final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
