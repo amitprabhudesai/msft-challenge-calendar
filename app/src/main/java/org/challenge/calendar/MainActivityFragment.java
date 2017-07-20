@@ -7,6 +7,7 @@ import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.provider.CalendarContract.Instances;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -25,6 +26,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.squareup.timessquare.CalendarHeaderView;
+import com.squareup.timessquare.CalendarUtils;
 import com.squareup.timessquare.CalendarView2;
 
 import org.zakariya.stickyheaders.StickyHeaderLayoutManager;
@@ -38,6 +40,7 @@ import java.util.Locale;
 
 import static android.Manifest.permission.READ_CALENDAR;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static android.provider.CalendarContract.Events.*;
 import static org.challenge.calendar.AgendaDataSource.INVALID_TIME;
 
 public class MainActivityFragment extends Fragment implements
@@ -127,8 +130,10 @@ public class MainActivityFragment extends Fragment implements
     public MainActivityFragment() {
         minCal = Calendar.getInstance();
         minCal.add(Calendar.MONTH, -1);
+        CalendarUtils.setMidnight(minCal);
         maxCal = Calendar.getInstance();
         maxCal.add(Calendar.MONTH, 1);
+        CalendarUtils.setMidnight(maxCal);
     }
 
     @Override
@@ -234,14 +239,23 @@ public class MainActivityFragment extends Fragment implements
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        long now = new Date().getTime();
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
         ContentUris.appendId(builder, minCal.getTimeInMillis());
         ContentUris.appendId(builder, maxCal.getTimeInMillis());
+        // For some reason setting the date range in the content URIs
+        // does not work reliably and returns some events outside this
+        // range. Use the selection clause to fix this and get events
+        // in the correct range. Not doing so induces a crash while
+        // scrolling the agenda view to this date (outside the range)
+        // upon setting the date selection in the {@link CalendarView2}
+        // due to an IllegalArgumentException thrown by the
+        // {@link CalendarView2#validateDate(Date) method
+        String selection = "(( " + DTSTART + " >= " + minCal.getTimeInMillis() +
+                " ) AND ( " + DTSTART + " <= " + maxCal.getTimeInMillis() + " ))";
 
         return new CursorLoader(getActivity(),
                 builder.build(), INSTANCES_PROJECTION,
-                null, null, // select all
+                selection, null, // select in range
                 INSTANCES_SORT_ORDER);
     }
 

@@ -28,11 +28,8 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static java.util.Calendar.DATE;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
-import static java.util.Calendar.HOUR_OF_DAY;
-import static java.util.Calendar.MILLISECOND;
 import static java.util.Calendar.MINUTE;
 import static java.util.Calendar.MONTH;
-import static java.util.Calendar.SECOND;
 import static java.util.Calendar.WEEK_OF_MONTH;
 import static java.util.Calendar.YEAR;
 
@@ -290,8 +287,8 @@ public class CalendarView2 extends RecyclerView {
         weeks.clear();
         minCal.setTime(minDate);
         maxCal.setTime(maxDate);
-        setMidnight(minCal);
-        setMidnight(maxCal);
+        CalendarUtils.setMidnight(minCal);
+        CalendarUtils.setMidnight(maxCal);
         displayOnly = false;
 
         // maxDate is exclusive: bump back to the previous day
@@ -301,11 +298,11 @@ public class CalendarView2 extends RecyclerView {
 
         // Now iterate between minCal and maxCal and build up our list of weeks to show.
         weekCounter.setTime(minCal.getTime());
+        final int maxWeek = maxCal.get(WEEK_OF_MONTH);
         final int maxMonth = maxCal.get(MONTH);
-        final int maxYear = maxCal.get(YEAR);
-        while ((weekCounter.get(MONTH) <= maxMonth // Up to, including the month.
-                || weekCounter.get(YEAR) < maxYear) // Up to the year.
-                && weekCounter.get(YEAR) < maxYear + 1) { // But not > next yr.
+        while ((weekCounter.get(WEEK_OF_MONTH) <= maxWeek // Up to, including the week.
+                || weekCounter.get(MONTH) < maxMonth) // Up to the month.
+                && weekCounter.get(MONTH) < maxMonth + 1) { // But not > next month.
             Date date = weekCounter.getTime();
             WeekDescriptor week =
                     new WeekDescriptor(weekCounter.get(WEEK_OF_MONTH),
@@ -508,13 +505,6 @@ public class CalendarView2 extends RecyclerView {
         return "minDate: " + minDate + "\nmaxDate: " + maxDate;
     }
 
-    static void setMidnight(Calendar cal) {
-        cal.set(HOUR_OF_DAY, 0);
-        cal.set(MINUTE, 0);
-        cal.set(SECOND, 0);
-        cal.set(MILLISECOND, 0);
-    }
-
     /**
      * Select a new date.
      * @return - whether we were able to set the date
@@ -557,7 +547,7 @@ public class CalendarView2 extends RecyclerView {
         Calendar newlySelectedCal = Calendar.getInstance(timeZone, locale);
         newlySelectedCal.setTime(date);
         // Sanitize input: clear out the hours/minutes/seconds/millis.
-        setMidnight(newlySelectedCal);
+        CalendarUtils.setMidnight(newlySelectedCal);
 
         clearOldSelections();
 
