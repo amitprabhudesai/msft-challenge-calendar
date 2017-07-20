@@ -13,7 +13,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -229,9 +228,6 @@ public class MainActivityFragment extends Fragment implements
 
     // Create the data-source and adapters; also initialize the loader
     private void init() {
-        mDataSource = new AgendaDataSource(Calendar.getInstance(),
-                new SimpleDateFormat("EEE, d MMM", Locale.US),
-                new SimpleDateFormat("HH:mm", Locale.US));
         mStickyAdapter = new StickyAgendaViewAdapter(getActivity());
         mRecyclerView.setAdapter(mStickyAdapter);
         getLoaderManager().initLoader(ID_LOADER_CALENDAR_EVENTS, null, this);
@@ -260,7 +256,7 @@ public class MainActivityFragment extends Fragment implements
         String selection = "(( " + DTSTART + " >= " + minCal.getTimeInMillis() +
                 " ) AND ( " + DTSTART + " <= " + maxCal.getTimeInMillis() + " ))";
 
-        return new CursorLoader(getActivity(),
+        return new CalendarCursorLoader(getActivity(),
                 builder.build(), INSTANCES_PROJECTION,
                 selection, null, // select in range
                 INSTANCES_SORT_ORDER);
@@ -271,6 +267,13 @@ public class MainActivityFragment extends Fragment implements
         if (null == data || data.getCount() <= 0) {
             return;
         }
+
+        // create a new instance every time we are notified
+        // to prevent duplicate events or having to clear the
+        // older data
+        mDataSource = new AgendaDataSource(Calendar.getInstance(),
+                new SimpleDateFormat("EEE, d MMM", Locale.US),
+                new SimpleDateFormat("HH:mm", Locale.US));
 
         final Calendar cal = Calendar.getInstance();
         final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);

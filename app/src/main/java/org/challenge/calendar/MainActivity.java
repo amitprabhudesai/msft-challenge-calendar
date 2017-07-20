@@ -18,24 +18,12 @@ public class MainActivity extends AppCompatActivity implements
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private MainActivityFragment mMainActivityFragment;
-
-    private final static int REQUEST_ADD_CALENDAR_EVENT = 1;
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (REQUEST_ADD_CALENDAR_EVENT == requestCode) {
-            mMainActivityFragment.refresh();
-        }
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        mMainActivityFragment = (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -44,7 +32,7 @@ public class MainActivity extends AppCompatActivity implements
                 // Use an intent to insert a new event
                 // This way we don't need to hold (or check) the WRITE_CALENDAR permission
                 Intent intent = new Intent(Intent.ACTION_INSERT).setData(CalendarContract.Events.CONTENT_URI);
-                startActivityForResult(intent, REQUEST_ADD_CALENDAR_EVENT);
+                startActivity(intent);
             }
         });
     }
