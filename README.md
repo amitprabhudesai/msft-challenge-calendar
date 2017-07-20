@@ -1,7 +1,7 @@
 # msft-challenge-calendar
 Calendar and Agenda Views of the Outlook App
 
-Modified: July 15, 2017
+Modified: July 20, 2017
 
 ## Getting Stuff Done
 
