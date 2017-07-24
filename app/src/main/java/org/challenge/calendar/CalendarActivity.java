@@ -13,8 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import dagger.android.AndroidInjection;
-
 public class CalendarActivity extends AppCompatActivity implements
         CalendarFragment.DateSelectionChangedListener {
 
@@ -22,7 +20,6 @@ public class CalendarActivity extends AppCompatActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        AndroidInjection.inject(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

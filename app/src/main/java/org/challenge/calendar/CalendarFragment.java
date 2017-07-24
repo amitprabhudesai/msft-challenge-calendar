@@ -36,6 +36,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import dagger.android.support.AndroidSupportInjection;
+
 import static android.Manifest.permission.READ_CALENDAR;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.provider.CalendarContract.Events.DTSTART;
@@ -151,6 +153,7 @@ public class CalendarFragment extends Fragment implements
     }
 
     public void onAttach(Context context) {
+        AndroidSupportInjection.inject(this);
         super.onAttach(context);
 
         try {

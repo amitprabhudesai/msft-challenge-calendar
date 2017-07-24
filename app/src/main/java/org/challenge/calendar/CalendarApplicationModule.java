@@ -6,5 +6,5 @@ import dagger.android.ContributesAndroidInjector;
 @Module
 public abstract class CalendarApplicationModule {
     @ContributesAndroidInjector
-    abstract CalendarActivity contributeActivityInjector();
+    abstract CalendarFragment contributeCalendarFragmentInjector();
 }
