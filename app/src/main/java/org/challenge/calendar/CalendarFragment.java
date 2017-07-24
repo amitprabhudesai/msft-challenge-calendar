@@ -36,6 +36,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import javax.inject.Inject;
+
 import dagger.android.support.AndroidSupportInjection;
 
 import static android.Manifest.permission.READ_CALENDAR;
@@ -67,7 +69,8 @@ public class CalendarFragment extends Fragment implements
     private StickyAgendaViewAdapter mStickyAdapter;
     private TextView mTextView;
 
-    private AgendaDataSource mDataSource;
+    @Inject
+    AgendaDataSource agendaDataSource;
 
     private final Calendar minCal;
     private final Calendar maxCal;
@@ -102,7 +105,7 @@ public class CalendarFragment extends Fragment implements
                                                     StickyHeaderLayoutManager.HeaderPosition oldPosition,
                                                     StickyHeaderLayoutManager.HeaderPosition newPosition) {
                     if (StickyHeaderLayoutManager.HeaderPosition.STICKY == newPosition) {
-                        Date selected = new Date(mDataSource.getTime(section));
+                        Date selected = new Date(agendaDataSource.getTime(section));
                         mCalendarView.selectDate(selected, true);
                         mListener.onDateSelected(selected);
                     }
@@ -113,7 +116,7 @@ public class CalendarFragment extends Fragment implements
         @Override
         public void onDateSelected(Date date) {
             mRecyclerView.scrollToPosition(mStickyAdapter
-                    .getAdapterPositionForSectionHeader(mDataSource
+                    .getAdapterPositionForSectionHeader(agendaDataSource
                             .getSectionCeil(date.getTime())));
         }
 
@@ -236,13 +239,6 @@ public class CalendarFragment extends Fragment implements
         getLoaderManager().initLoader(ID_LOADER_CALENDAR_EVENTS, null, this);
     }
 
-    public void refresh() {
-        // NOTE *Always* clear the existing data before a reload to prevent
-        // duplicate events
-        mDataSource.clear();
-        getLoaderManager().getLoader(ID_LOADER_CALENDAR_EVENTS).forceLoad();
-    }
-
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Uri.Builder builder = Instances.CONTENT_URI.buildUpon();
@@ -271,12 +267,9 @@ public class CalendarFragment extends Fragment implements
             return;
         }
 
-        // create a new instance every time we are notified
-        // to prevent duplicate events or having to clear the
-        // older data
-        mDataSource = new AgendaDataSource(Calendar.getInstance(),
-                new SimpleDateFormat("EEE, d MMM", Locale.US),
-                new SimpleDateFormat("HH:mm", Locale.US));
+        // ensure the existing instance is cleared every time to prevent
+        // duplicate events
+        agendaDataSource.clear();
 
         final Calendar cal = Calendar.getInstance();
         final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -298,20 +291,20 @@ public class CalendarFragment extends Fragment implements
                 // this is just the begin time with the HH:mm:ss zeroed out
                 long section = computeSectionHeader(cal, beginVal, formatter);
                 if (INVALID_TIME == section) continue;
-                mDataSource.addEvent(section, event);
+                agendaDataSource.addEvent(section, event);
             }
         } catch (Exception e) {
             Log.w(TAG, e.getMessage());
         }
 
         mTextView.setVisibility(View.GONE);
-        mStickyAdapter.setDataSource(mDataSource);
+        mStickyAdapter.setDataSource(agendaDataSource);
         mStickyAdapter.notifyAllSectionsDataSetChanged();
         // show today's agenda
         // to do this compute the section floor, which is the section
         // for the last event that begins no later than the current time
         mRecyclerView.scrollToPosition(mStickyAdapter
-                .getAdapterPositionForSectionHeader(mDataSource
+                .getAdapterPositionForSectionHeader(agendaDataSource
                         .getSectionFloor(new Date().getTime() /* now */)));
     }
 

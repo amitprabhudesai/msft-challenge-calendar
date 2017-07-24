@@ -7,6 +7,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * The data source that feeds the adapter.
  * This maintains all the sections in the AgendaView
@@ -14,9 +17,12 @@ import java.util.Map;
  */
 public final class AgendaDataSource {
 
-    private final Calendar calendar;
-    private final SimpleDateFormat sectionHeaderFormatter;
-    private final SimpleDateFormat eventTimeFormatter;
+    @Inject Calendar calendar;
+    @Inject
+    @Named("sectionHeaderFormatter")
+    SimpleDateFormat sectionHeaderFormatter;
+    @Named("eventTimeFormatter")
+    @Inject SimpleDateFormat eventTimeFormatter;
 
     // Maintain a list of events keyed by the day represented
     // as time in millis since epoch. This is done so we can
