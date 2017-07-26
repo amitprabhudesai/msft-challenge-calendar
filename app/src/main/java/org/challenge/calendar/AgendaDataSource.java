@@ -33,7 +33,8 @@ public final class AgendaDataSource {
     // Vis-a-vis the AgendaView, the keys represent the sections,
     // while the values (list of events) represent the collection
     // of events in that section
-    private final Map<Long, List<CalendarEvent>> events;
+    @Inject
+    Map<Long, List<CalendarEvent>> events;
 
     static final long INVALID_TIME = Long.MIN_VALUE;
 
@@ -44,6 +45,16 @@ public final class AgendaDataSource {
         this.sectionHeaderFormatter = sectionHeaderFormatter;
         this.eventTimeFormatter = eventTimeFormatter;
         this.events = new LinkedHashMap<>();
+    }
+
+    public AgendaDataSource(Calendar calendar,
+                            SimpleDateFormat sectionHeaderFormatter,
+                            SimpleDateFormat eventTimeFormatter,
+                            Map<Long, List<CalendarEvent>> events) {
+        this.calendar = calendar;
+        this.sectionHeaderFormatter = sectionHeaderFormatter;
+        this.eventTimeFormatter = eventTimeFormatter;
+        this.events = new LinkedHashMap<>(events);
     }
 
     /**

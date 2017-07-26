@@ -12,15 +12,18 @@ import javax.inject.Named;
 import dagger.Module;
 import dagger.Provides;
 
-@Module
-class AgendaDataSourceModule {
+@Module(includes = AgendaDataSourceModule.class)
+class MockAgendaDataSourceModule {
 
-    private SimpleDateFormat sectionHeaderFormatter;
-    private SimpleDateFormat eventTimeFormatter;
+    private final SimpleDateFormat sectionHeaderFormatter;
+    private final SimpleDateFormat eventTimeFormatter;
+    private final Map<Long, List<CalendarEvent>> eventsForTesting;
 
-    public AgendaDataSourceModule() {
+    public MockAgendaDataSourceModule() {
         this.sectionHeaderFormatter = new SimpleDateFormat("EEE, d MMM", Locale.US);
         this.eventTimeFormatter = new SimpleDateFormat("HH:mm", Locale.US);
+        this.eventsForTesting = new LinkedHashMap<>();
+        //TODO(amit.prabhudesai) Populate events for testing
     }
 
     @Provides
@@ -40,8 +43,9 @@ class AgendaDataSourceModule {
         return eventTimeFormatter;
     }
 
+
     @Provides
     Map<Long, List<CalendarEvent>> provideEvents() {
-        return new LinkedHashMap<>();
+        return eventsForTesting;
     }
 }
